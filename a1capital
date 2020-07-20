@@ -1,0 +1,46 @@
+#needed packages: 1.selenium, 2.chromdriver, 3.viretualenv
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import pandas as pd
+
+DRIVER_PATH = 'C:/Users/Berat/Documents/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+options = Options()
+options.headless = True
+options.add_argument("--window-size=1920,1200")
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+
+####
+driver.get("https://a1capital.com.tr/17-temmuz-gunluk-bulten-4/") # LINK
+
+#### TARIH
+tarih = driver.find_element_by_xpath("/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[1]/tbody/tr[1]/td[2]/span").text
+
+#### SIRKET HABERLERI
+sirket_haberleri = driver.find_elements_by_xpath("/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[3]/tbody/tr[2]/td/table/tbody/tr")
+news_list1 = [] #Haberler
+news_list1_codes = [] #Şirket kodları
+for news in sirket_haberleri:
+    news_list1.append(news.find_element_by_xpath(".//td[4]/p/span").text)
+    news_list1_codes.append(news.find_element_by_xpath(".//td[2]/p/b/span").text)
+
+#### PAY ALIM SATIM HABERLERI
+pay_alım_satım_haberleri = driver.find_elements_by_xpath("/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[3]/tbody/tr[3]/td/table[1]/tbody/tr[2]/td/table/tbody/tr")
+news_list2 = [] #Haberler
+news_list2_codes = [] #Şirket kodları
+for news in pay_alım_satım_haberleri:
+    news_list2.append(news.find_element_by_xpath(".//td[4]/p/span").text)
+    news_list2_codes.append(news.find_element_by_xpath(".//td[2]/p/b/span").text)
+
+#### SERMAYE ARTIRIM HABERLERI
+sermaye_artırım_haberleri = driver.find_elements_by_xpath("/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[3]/tbody/tr[3]/td/table[2]/tbody/tr[2]/td/table/tbody/tr")
+news_list3 = [] #Haberler
+news_list3_codes = [] #Şirket kodları
+for news in sermaye_artırım_haberleri:
+    news_list3.append(news.find_element_by_xpath(".//td[4]/p/span").text)
+    news_list3_codes.append(news.find_element_by_xpath(".//td[2]/p/b/span").text)
+
+data = [list(x) for x in zip(news_list1_codes,news_list1, tarih)]
+
+df = pd.DataFrame(data, columns=['code','news'])
+print(df)
