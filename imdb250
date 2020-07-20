@@ -1,0 +1,23 @@
+#needed packages: 1.selenium, 2.chromedriver, 3.virtualenv
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+DRIVER_PATH = 'C:/Users/Berat/Documents/webdriver/chromedriver'
+
+options = Options()
+options.headless = True
+options.add_argument("--window-size=1920,1200")
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+
+driver.get("https://www.imdb.com/chart/top/?ref_=nv_mv_250")
+
+name_list = []
+year_list = []
+rating_list = []
+movies_list = driver.find_elements_by_xpath("/html/body/div[3]/div/div[2]/div[3]/div/div[1]/div/span/div/div/div[3]/table/tbody/tr")
+
+for movie in movies_list:
+    name_list.append(movie.find_element_by_xpath("./td[2]/a").text)
+    year_list.append(movie.find_element_by_xpath("./td[2]/span").text)
+    rating_list.append(movie.find_element_by_xpath("./td[3]/strong").text)
