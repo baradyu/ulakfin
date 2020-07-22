@@ -2,19 +2,20 @@
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import yfinance as yf
 import pandas as pd
 
-DRIVER_PATH = 'C:/Users/Berat/Documents/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
 ####
-driver.get("https://a1capital.com.tr/17-temmuz-gunluk-bulten-4/") # LINK
+tarih_a1capital = "temmuz"
+month_yfinance = "07"
 
-#### TARIH
-tarih = driver.find_element_by_xpath("/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[1]/tbody/tr[1]/td[2]/span").text
+driver.get(f"https://a1capital.com.tr/21-{tarih_a1capital}-gunluk-bulten-2/") # LINK
 
 #### SIRKET HABERLERI
 sirket_haberleri = driver.find_elements_by_xpath("/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[3]/tbody/tr[2]/td/table/tbody/tr")
@@ -40,7 +41,51 @@ for news in sermaye_artırım_haberleri:
     news_list3.append(news.find_element_by_xpath(".//td[4]/p/span").text)
     news_list3_codes.append(news.find_element_by_xpath(".//td[2]/p/b/span").text)
 
-data = [list(x) for x in zip(news_list1_codes,news_list1, tarih)]
+#### CODES FOR YFINANCE (.IS)
+news_list1_codes_yf = []
+for code in news_list1_codes:
+    news_list1_codes_yf.append(code + '.IS')
+    
+news_list2_codes_yf = []
+for code in news_list2_codes:
+    news_list2_codes_yf.append(code + '.IS')
+    
+news_list3_codes_yf = []
+for code in news_list3_codes:
+    news_list3_codes_yf.append(code + '.IS')
 
-df = pd.DataFrame(data, columns=['code','news'])
-print(df)
+####  1
+data_1 = yf.download(tickers = news_list1_codes_yf, start=f"2020-{month_yfinance}-21", end="2020-07-22")
+difference_1 = (data_1["Close"] - data_1["Open"])/data_1["Open"]
+difference_1.columns = news_list1_codes
+change_1 = difference_1.T
+change_1['code'] = news_list1_codes
+
+#### 2
+data_2 = yf.download(tickers = news_list2_codes_yf, start="2020-07-21", end="2020-07-22")
+difference_2 = (data_2["Close"] - data_2["Open"])/data_2["Open"]
+change_2 = difference_2.T
+
+#### 3
+data_3 = yf.download(tickers = news_list3_codes_yf, start="2020-07-21", end="2020-07-22")
+difference_3 = (data_3["Close"] - data_3["Open"])/data_3["Open"]
+difference_3.columns = news_list3_codes
+change_3 = difference_3.T
+change_3['code'] = news_list3_codes
+
+#### DATA BIRLESTIRME
+#data1 - Şirket haberleri
+data1 = pd.DataFrame(list(zip(news_list1_codes, news_list1)))
+data1.columns = ['code', 'sentiment']
+data_sirket = pd.merge(data1, change_1, on="code")
+data_sirket.columns = ['code', 'sentiment', 'percentage change']
+
+######################### PAY ALIM SATIM EKSIK #####################################
+
+#data2 - Sermaye Artırım haberleri
+data3 = pd.DataFrame(list(zip(news_list3_codes, news_list3)))
+data3.columns = ['code', 'sentiment']
+data_artırım = pd.merge(data3, change_3, on="code")
+data_artırım.columns = ['code', 'sentiment', 'percentage change']
+
+data_sirket
