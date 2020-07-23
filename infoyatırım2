@@ -12,7 +12,7 @@ driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
 #### INPUTS
 month = "07"#-
-day = "17"#-
+day = "16"#-
 day_end = str(int(day) + 1)
 
 #### IFRAME
