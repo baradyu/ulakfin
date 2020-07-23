@@ -12,7 +12,7 @@ driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
 #### INPUTS
 month = "07"#-
-day = "23"#-
+day = "17"#-
 day_end = str(int(day) + 1)
 
 #### IFRAME
@@ -23,16 +23,17 @@ driver.get(src)
 
 #### TARIH
 tarih = link[38:48]
-tarih_list = np.nan
 
 #### SIRKET HABERLERI
 sirket_haberleri = driver.find_elements_by_xpath("/html/body/table[2]/tbody/tr[3]/td/ul/li")
 news_list1 = []
 news_list1_codes = []
+date_list = []
 for news in sirket_haberleri:
     try:
         news_list1.append(news.find_element_by_xpath('./span').text)
         news_list1_codes.append(news.find_element_by_xpath('./b/span').text)
+        date_list.append(tarih)
     except:
         print('xd')
     finally:
@@ -40,8 +41,8 @@ for news in sirket_haberleri:
         for snews in sub_news_list1:
             news_list1.append(snews.find_element_by_xpath('./span').text)
             news_list1_codes.append(news.find_element_by_xpath('./b/span').text)
-    
-    
+            date_list.append(tarih)
+
 #### REMOVING '-' from the codes
 news_list1_codes = [x[:-2] for x in news_list1_codes]
 
@@ -58,10 +59,11 @@ difference_1.index = ['xd']
 yf_codes = list(difference_1.columns)
 
 #data1 - Sirket haberleri
-data1 = pd.DataFrame(list(zip(news_list1_codes, news_list1)))
+data1 = pd.DataFrame(list(zip(date_list, news_list1_codes, news_list1)))
 data1.index = news_list1_codes
-data1.columns = ['code','sentiment']
+data1.columns = ['date', 'code','sentiment']
 data1['change'] = np.nan
+data1['count'] = np.nan
 
 for code_a1 in news_list1_codes:
     for code_yf in yf_codes:
@@ -71,5 +73,19 @@ for code_a1 in news_list1_codes:
 
 data1['sentiment'].replace('', np.nan, inplace=True)
 data1.dropna(subset=['sentiment'], inplace=True)
+
+code_counts = data1.code.value_counts().reset_index()
+code_counts.columns = ['code','count']
+code_counts.index = list(code_counts['code'])
+code_counts = code_counts.T
+code_counts.index = ['code','count']
+
+code_counts = code_counts.drop(code_counts.index[0])
+
+for code_count in list(code_counts.columns):
+    for code_data1 in list(data1['code']):
+        if code_count == code_data1:
+            data1.loc[f'{code_data1}','count'] = code_counts.loc['count', f'{code_count}']
+            break
 
 data1
