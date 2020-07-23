@@ -4,7 +4,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver.exe' #BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
@@ -15,11 +15,10 @@ driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 month_a1capital = "temmuz"
 month_yfinance = "07"
 # DAY------------------------------------------
-day_a1capital = "22"
-day_start = 22
+day_a1capital = "21"
 ###----------------------------------------
-day_start_str = str(day_start)
-day_end_str = str(day_start + 1)
+day_start_str = day_a1capital
+day_end_str = str(int(day_a1capital) + 1)
 ###
 
 driver.get(f"https://a1capital.com.tr/{day_a1capital}-{month_a1capital}-gunluk-bulten-2/") # LINK
@@ -44,7 +43,7 @@ difference_1.index = ['xd']
 yf_codes = list(difference_1.columns)
 change_1 = difference_1.T
 
-#data2 - Sermaye Artırım haberleri
+#data1 - Sirket haberleri
 data1 = pd.DataFrame(list(zip(news_list1_codes, news_list1)))
 data1.index = news_list1_codes
 data1.columns = ['code','sentiment']
@@ -54,7 +53,6 @@ for code_a1 in news_list1_codes:
     for code_yf in yf_codes:
         if code_a1 == code_yf:
             data1.loc[f'{code_a1}','change'] = difference_1.loc['xd',f'{code_a1}']
-        else:
-            continue
+            break
 
 data1
