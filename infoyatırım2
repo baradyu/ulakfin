@@ -12,7 +12,7 @@ driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
 #### INPUTS
 month = "07"#-
-day = "22"#-
+day = "17"#-
 day_end = str(int(day) + 1)
 
 #### IFRAME
@@ -49,28 +49,72 @@ news_list1_codes = [x[:-2] for x in news_list1_codes]
 news_list1_codes_yf = []
 for code in news_list1_codes:
     news_list1_codes_yf.append(code + '.IS')
-
-data_1 = yf.download(tickers=news_list1_codes_yf, start=f"2020-{month}-{day}",
-                     end=f"2020-{month}-{day_end}")
-difference_1 = (data_1["Close"] - data_1["Open"]) / data_1["Open"]
-difference_1.columns = [x[:-3] for x in difference_1.columns]
-difference_1 = difference_1.head(1)
-difference_1.index = ['xd']
-yf_codes = list(difference_1.columns)
-
+    
 #data1 - Sirket haberleri
 data1 = pd.DataFrame(list(zip(date_list, news_list1_codes, news_list1)))
 data1.index = news_list1_codes
 data1.columns = ['date', 'code','sentiment']
-data1['change'] = np.nan
 data1['count'] = np.nan
+data1['yesterday_close'] = np.nan
+data1['today_open'] = np.nan
+data1['today_close'] = np.nan
+data1['change'] = np.nan
+
+#### YFINANCE
+#today
+
+#yesterday
+yf_yesterday = yf.download(tickers=news_list1_codes_yf, start=f"2020-{month}-{str(int(day)-1)}",
+                     end=f"2020-{month}-{day_end}")
+yf_yesterday_close = yf_yesterday['Close']
+yf_yesterday_close.columns = [x[:-3] for x in yf_yesterday_close.columns]
+yf_yesterday_close = yf_yesterday_close.head(1)
+yf_yesterday_close.index = ['xd']
+yf_codes = list(yf_yesterday_close.columns)
+for code_a1 in news_list1_codes:
+    for code_yf in yf_codes:
+        if code_a1 == code_yf:
+            data1.loc[f'{code_a1}','yesterday_close'] = yf_yesterday_close.loc['xd',f'{code_a1}']
+            break
+#today
+yf_today = yf.download(tickers=news_list1_codes_yf, start=f"2020-{month}-{day}",
+                     end=f"2020-{month}-{day_end}")
+#----open-----#
+yf_today_open = yf_today['Open']
+yf_today_open.columns = [x[:-3] for x in yf_today_open.columns]
+yf_today_open = yf_today_open.head(1)
+yf_today_open.index = ['xd']
+yf_codes = list(yf_today_open.columns)
+for code_a1 in news_list1_codes:
+    for code_yf in yf_codes:
+        if code_a1 == code_yf:
+            data1.loc[f'{code_a1}','today_open'] = yf_today_open.loc['xd',f'{code_a1}']
+            break
+#----close----#
+yf_today_close = yf_today['Close']
+yf_today_close.columns = [x[:-3] for x in yf_today_close.columns]
+yf_today_close = yf_today_close.head(1)
+yf_today_close.index = ['xd']
+yf_codes = list(yf_today_close.columns)
+for code_a1 in news_list1_codes:
+    for code_yf in yf_codes:
+        if code_a1 == code_yf:
+            data1.loc[f'{code_a1}','today_close'] = yf_today_close.loc['xd',f'{code_a1}']
+            break
+
+#----one day percentage change-----#
+yf_1day_change = (yf_today["Close"] - yf_today["Open"]) / yf_today["Open"]
+yf_1day_change.columns = [x[:-3] for x in yf_1day_change.columns]
+yf_1day_change = yf_1day_change.head(1)
+yf_1day_change.index = ['xd']
+yf_codes = list(yf_1day_change.columns)
 
 for code_a1 in news_list1_codes:
     for code_yf in yf_codes:
         if code_a1 == code_yf:
-            data1.loc[f'{code_a1}','change'] = difference_1.loc['xd',f'{code_a1}']
+            data1.loc[f'{code_a1}','change'] = yf_1day_change.loc['xd',f'{code_a1}']
             break
-
+            
 data1['sentiment'].replace('', np.nan, inplace=True)
 data1.dropna(subset=['sentiment'], inplace=True)
 
