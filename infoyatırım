@@ -36,20 +36,23 @@ def infoyatırım_sirket_haberleri(day,month):
     date_list = []
     for news in sirket_haberleri:
         try:
-            news_list1.append(news.find_element_by_xpath('./span').text)
-            news_list1_codes.append(news.find_element_by_xpath('./b/span').text)
-            date_list.append(tarih)
+            if '&' in news.find_element_by_xpath('./b/span').text:
+                for i in range(0,len(news.find_element_by_xpath('./b/span').text.split(' &'))):
+                    news_list1_codes.append(news.find_element_by_xpath('./b/span').text[:-2].split(' &')[i])
+                    news_list1.append(news.find_element_by_xpath('./span').text)
+                    date_list.append(tarih)
+            else:
+                news_list1.append(news.find_element_by_xpath('./span').text)
+                news_list1_codes.append(news.find_element_by_xpath('./b/span').text[:-2])
+                date_list.append(tarih)
         except:
             print('xd')
         finally:
             sub_news_list1 = news.find_elements_by_xpath('./ul/li')
             for snews in sub_news_list1:
                 news_list1.append(snews.find_element_by_xpath('./span').text)
-                news_list1_codes.append(news.find_element_by_xpath('./b/span').text)
+                news_list1_codes.append(news.find_element_by_xpath('./b/span').text[:-2])
                 date_list.append(tarih)
-
-    #### REMOVING '-' from the codes
-    news_list1_codes = [x[:-2] for x in news_list1_codes]
 
     news_list1_codes_yf = []
     for code in news_list1_codes:
@@ -137,7 +140,7 @@ def infoyatırım_sirket_haberleri(day,month):
                 data1.loc[f'{code_data1}','count'] = code_counts.loc['count', f'{code_count}']
                 break
     return data1
-   
+    
 PAY ALIM SATIM HABERLERİ #------------------------------------------------------------------------------------------------------------------
 #INPUTS ('DAY',STRING')
 # ex: infoyatırım_alımsatım_haberleri('22','07')
@@ -177,20 +180,23 @@ def infoyatırım_alımsatım_haberleri(day,month):
     date_list = []
     for news in alım_satım:
         try:
-            news_list2.append(news.find_element_by_xpath('./span').text)
-            news_list2_codes.append(news.find_element_by_xpath('./b/span').text)
-            date_list.append(tarih)
+            if '&' in news.find_element_by_xpath('./b/span').text:
+                for i in range(0,len(news.find_element_by_xpath('./b/span').text.split(' &'))):
+                    news_list2_codes.append(news.find_element_by_xpath('./b/span').text[:-2].split(' &')[i])
+                    news_list2.append(news.find_element_by_xpath('./span').text)
+                    date_list.append(tarih)
+            else:
+                news_list2.append(news.find_element_by_xpath('./span').text)
+                news_list2_codes.append(news.find_element_by_xpath('./b/span').text[:-2])
+                date_list.append(tarih)
         except:
             print('xd')
         finally:
             sub_news_list2 = news.find_elements_by_xpath('./ul/li')
             for snews in sub_news_list2:
                 news_list2.append(snews.find_element_by_xpath('./span').text)
-                news_list2_codes.append(news.find_element_by_xpath('./b/span').text)
+                news_list2_codes.append(news.find_element_by_xpath('./b/span').text[:-2])
                 date_list.append(tarih)
-
-    #### REMOVING '-' from the codes
-    news_list2_codes = [x[:-2] for x in news_list2_codes]
 
     news_list2_codes_yf = []
     for code in news_list2_codes:
@@ -312,26 +318,30 @@ def infoyatırım_sermaye_haberleri(day,month):
     tarih = link[38:48]
 
     #### ALIM SATIM HABERLERİ
-    alım_satım = driver.find_elements_by_xpath("/html/body/table[2]/tbody/tr[7]/td/ul/li")
+    sermaye_artırım = driver.find_elements_by_xpath("/html/body/table[2]/tbody/tr[7]/td/ul/li")
     news_list3 = []
     news_list3_codes = []
     date_list = []
-    for news in alım_satım:
+    for news in sermaye_artırım:
         try:
-            news_list3.append(news.find_element_by_xpath('./span').text)
-            news_list3_codes.append(news.find_element_by_xpath('./b/span').text)
-            date_list.append(tarih)
+            if '&' in news.find_element_by_xpath('./b/span').text:
+                for i in range(0,len(news.find_element_by_xpath('./b/span').text.split(' &'))):
+                    news_list3_codes.append(news.find_element_by_xpath('./b/span').text[:-2].split(' &')[i])
+                    news_list3.append(news.find_element_by_xpath('./span').text)
+                    date_list.append(tarih)
+            else:
+                news_list3.append(news.find_element_by_xpath('./span').text)
+                news_list3_codes.append(news.find_element_by_xpath('./b/span').text[:-2])
+                date_list.append(tarih)
         except:
             print('xd')
         finally:
             sub_news_list3 = news.find_elements_by_xpath('./ul/li')
             for snews in sub_news_list3:
                 news_list3.append(snews.find_element_by_xpath('./span').text)
-                news_list3_codes.append(news.find_element_by_xpath('./b/span').text)
+                news_list3_codes.append(news.find_element_by_xpath('./b/span').text[:-2])
                 date_list.append(tarih)
 
-    #### REMOVING '-' from the codes
-    news_list3_codes = [x[:-2] for x in news_list3_codes]
 
     news_list3_codes_yf = []
     for code in news_list3_codes:
