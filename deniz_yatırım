@@ -8,11 +8,9 @@ def download_file(url):
         with open(local_filename, 'wb') as f:
             f.write(r.content)
     return(local_filename)
-   
-#------------------------------------------------
-date = '22.05.2020' #------------INPUT--------------
-#-----------------------------------------------
-
+#
+date = '24.07.2020'
+#
 invoice_url = f'https://www.denizyatirim.com/sites/1/upload/files/GUNLUK_BULTEN_-_{date}.PDF'
 #
 invoice = download_file(invoice_url)
@@ -40,7 +38,7 @@ for row in text:
 #
 news_list2 = []
 for row in news_list:
-    if ':' in row[0:50]:
+    if ':' in row[0:40]:
         news_list2.append(row)
     else:
         continue
