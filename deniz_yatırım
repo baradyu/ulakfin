@@ -1,47 +1,63 @@
 import pdfplumber
 import requests
 import pandas as pd
+#
 def download_file(url):
     local_filename = url.split('/')[-1]
-    
     with requests.get(url) as r:
         with open(local_filename, 'wb') as f:
             f.write(r.content)
-            
     return(local_filename)
-invoice_url = 'https://www.denizyatirim.com/sites/1/upload/files/GUNLUK_BULTEN_-_07.08.2020.PDF'
+   
+#------------------------------------------------
+date = '22.05.2020' #------------INPUT--------------
+#-----------------------------------------------
+
+invoice_url = f'https://www.denizyatirim.com/sites/1/upload/files/GUNLUK_BULTEN_-_{date}.PDF'
+#
 invoice = download_file(invoice_url)
+#
+pdf = pdfplumber.open(invoice)
+texts = []
 with pdfplumber.open(invoice) as pdf:
-    page2 = pdf.pages[1]
-    page3 = pdf.pages[2]
-    text2 = page2.extract_text()
-    text3 = page3.extract_text()
-    texts = [text2,text3]
-    text = text2 + text3
-text = text.split('Basında Çıkan Haberler')[0]
-text = text.split('\n')[4:]
+    for page in pdf.pages:
+        text = page.extract_text()
+        texts.append(text)
+text = "".join(texts)
+#
+text= text.split('Basında Çıkan Haberler')[0]
+text = text.split('KAP ve Şirket Haberleri')[-1]
+#
+text = text.split('\n')[2:]
 del text[-1]
 news_list = []
-i = 0
+#
 for row in text:
     if '\uf0a7' in row:
         news_list.append(row.split('\uf0a7')[-1])
     else:
         news_list[-1] = news_list[-1] + row
+#
 news_list2 = []
 for row in news_list:
-    if ':' in row[0:8]:
+    if ':' in row[0:50]:
         news_list2.append(row)
     else:
         continue
+#
 codes = []
 news = []
+dates = [] 
 for row in news_list2:
     codes.append(row.split(':')[0])
-    news.append(row.split(':')[-1])
+    news.append(row.split(':')[1])
+    dates.append(date)
+#
 codes2 = []
 for code in codes:
     codes2.append(code[2:])
-data = pd.DataFrame(list(zip(codes2,news)))
-data.columns = ['hisse','haber']
+#
+data = pd.DataFrame(list(zip(dates,codes2,news)))
+data.columns = ['tarih','hisse','haber']
+#
 data
