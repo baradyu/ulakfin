@@ -1,17 +1,24 @@
 import pdfplumber
 import requests
 import pandas as pd
-
 def download_file(url):
     local_filename = url.split('/')[-1]
+    
     with requests.get(url) as r:
         with open(local_filename, 'wb') as f:
             f.write(r.content)
+            
     return(local_filename)
+invoice_url = 'https://www.denizyatirim.com/sites/1/upload/files/GUNLUK_BULTEN_-_07.08.2020.PDF'
 invoice = download_file(invoice_url)
 with pdfplumber.open(invoice) as pdf:
-    page = pdf.pages[1]
-    text = page.extract_text()
+    page2 = pdf.pages[1]
+    page3 = pdf.pages[2]
+    text2 = page2.extract_text()
+    text3 = page3.extract_text()
+    texts = [text2,text3]
+    text = text2 + text3
+text = text.split('Basında Çıkan Haberler')[0]
 text = text.split('\n')[4:]
 del text[-1]
 news_list = []
