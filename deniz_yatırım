@@ -1,0 +1,40 @@
+import pdfplumber
+import requests
+import pandas as pd
+
+def download_file(url):
+    local_filename = url.split('/')[-1]
+    with requests.get(url) as r:
+        with open(local_filename, 'wb') as f:
+            f.write(r.content)
+    return(local_filename)
+invoice = download_file(invoice_url)
+with pdfplumber.open(invoice) as pdf:
+    page = pdf.pages[1]
+    text = page.extract_text()
+text = text.split('\n')[4:]
+del text[-1]
+news_list = []
+i = 0
+for row in text:
+    if '\uf0a7' in row:
+        news_list.append(row.split('\uf0a7')[-1])
+    else:
+        news_list[-1] = news_list[-1] + row
+news_list2 = []
+for row in news_list:
+    if ':' in row[0:8]:
+        news_list2.append(row)
+    else:
+        continue
+codes = []
+news = []
+for row in news_list2:
+    codes.append(row.split(':')[0])
+    news.append(row.split(':')[-1])
+codes2 = []
+for code in codes:
+    codes2.append(code[2:])
+data = pd.DataFrame(list(zip(codes2,news)))
+data.columns = ['hisse','haber']
+data
