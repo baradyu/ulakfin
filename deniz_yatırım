@@ -9,7 +9,7 @@ def download_file(url):
             f.write(r.content)
     return(local_filename)
 #
-date = '20.07.2020'
+date = '08.07.2020'
 #
 invoice_url = f'https://www.denizyatirim.com/sites/1/upload/files/GUNLUK_BULTEN_-_{date}.PDF'
 #
@@ -52,6 +52,11 @@ for row in news_list2:
             codes.append(code)
             news.append(row.split(':')[1])
             dates.append(date)
+    elif '-' in row.split(':')[0]:
+        for code in row.split(':')[0].split('-'):
+            codes.append(code)
+            news.append(row.split(':')[1])
+            dates.append(date)            
     else:
         codes.append(row.split(':')[0])
         news.append(row.split(':')[1])
@@ -59,7 +64,7 @@ for row in news_list2:
 #
 codes2 = []
 for code in codes:
-    codes2.append(code[1:])
+    codes2.append(code)
 #
 data = pd.DataFrame(list(zip(dates,codes2,news)))
 data.columns = ['tarih','hisse','haber']
