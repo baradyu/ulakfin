@@ -1,0 +1,53 @@
+import re
+import pdfplumber
+import requests
+import pandas as pd
+#
+pdf = pdfplumber.open("C:/Users/berat/Desktop/Gunluk_Bulten_05.06.2020.pdf")
+#
+texts = []
+for page in pdf.pages:
+    text = page.extract_text()
+    texts.append(text)
+text = "".join(texts)
+#
+text = text.split('Günlük Bülten / KAP Haberleri ')[-1]
+text = text.split('*Kamuyu Aydınlatma Platformu’na')[0]
+#
+text_splitted = text.split("\n")
+#
+pattern = re.compile(r'\d\d.\d\d.\d\d\d\d.\d\d.\d\d.\d\d')
+#
+list = []
+for row in text_splitted[1:]:
+    x = pattern.findall(row)
+    row = ' '.join([str(i) for i in x])
+    list.append(row)
+matcher = [x for x in list if x]
+#
+matches = []
+for row in text_splitted:
+    for match in matcher:
+        if match in row:
+            matches.append(row)
+#
+text = "".join(text_splitted[1:])
+#
+news_list = []
+for match in matches:
+    news_list.append(text.split(match)[0])
+    text = text.split(match)[1]
+news_list.append(text)
+#
+news = []
+for row in news_list[1:]:
+    news.append(row.strip())
+#
+codes = []
+for match in matches:
+    codes.append(match.split('/')[1][0:7].strip()[0:5].strip())
+#
+data = pd.DataFrame(zip(codes,news))
+data.columns = ['hisse','haber']
+#
+data
