@@ -1,0 +1,63 @@
+import re
+import pdfplumber
+import requests
+import pandas as pd
+#
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+import io
+import re
+
+def pdf_to_text(path):
+    manager = PDFResourceManager()
+    retstr = io.StringIO()
+    layout = LAParams(all_texts=True)
+    device = TextConverter(manager, retstr, laparams=layout)
+    filepath = open(path, 'rb')
+    interpreter = PDFPageInterpreter(manager, device)
+    for page in PDFPage.get_pages(filepath, check_extractable=False):
+        interpreter.process_page(page)
+    text = retstr.getvalue()
+    filepath.close()
+    device.close()
+    retstr.close()
+    return text
+#
+pdf_file = "C:/Users/berat/Desktop/Piyasalara Analitik Bakış 24_07_2020.pdf"
+#
+sirket_haberleri_pattern = '(?<=Şirket Haberleri).*?(?=BİST VERİLERİ)'
+text_list = []
+sirket_haber_list_1 =[]
+text_list.append(pdf_to_text(pdf_file))
+text_list[0] = text_list[0].split('HACİM')[0]
+text_list[0] = text_list[0].split('ŞİRKET HABERLERİ')[1]
+#
+text_splitted = text_list[0].split('\n')
+text_splitted = [i for i in text_splitted if i]
+#
+text_splitted2 = []
+for row in text_splitted:
+    if row != ' ':
+        text_splitted2.append(row)
+#
+news_list1 = []
+for row in text_splitted2:
+    if 'Haberin etkisi:' in row:
+        news_list1.append(row.split('Haberin etkisi:')[0][-7:-2].strip())
+    else:
+        news_list1[-1] = news_list1[-1] + row
+
+codes = []
+for row in news_list1:
+    codes.append(row[0:5])
+
+news = []
+for row in news_list1:
+    news.append(row[5:])
+#
+data = pd.DataFrame(list(zip(codes, news)))
+data.columns = ['hisse','haber']
+#
+data
