@@ -1,72 +1,79 @@
 import pdfplumber
 import requests
 import pandas as pd
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+import io
+import re
 #
-def download_file(url):
-    local_filename = url.split('/')[-1]
-    with requests.get(url) as r:
-        with open(local_filename, 'wb') as f:
-            f.write(r.content)
-    return(local_filename)
+def pdf_to_text(path):
+    manager = PDFResourceManager()
+    retstr = io.StringIO()
+    layout = LAParams(all_texts=True)
+    device = TextConverter(manager, retstr, laparams=layout)
+    filepath = open(path, 'rb')
+    interpreter = PDFPageInterpreter(manager, device)
+    for page in PDFPage.get_pages(filepath, check_extractable=False):
+        interpreter.process_page(page)
+    text = retstr.getvalue()
+    filepath.close()
+    device.close()
+    retstr.close()
+    return text
 #
-date = '08.07.2020'
+pdf_file = "C:/Users/berat/Desktop/deniz.pdf"
+text_list = []
+text_list.append(pdf_to_text(pdf_file))
 #
-invoice_url = f'https://www.denizyatirim.com/sites/1/upload/files/GUNLUK_BULTEN_-_{date}.PDF'
-#
-invoice = download_file(invoice_url)
-#
-pdf = pdfplumber.open(invoice)
-texts = []
-with pdfplumber.open(invoice) as pdf:
-    for page in pdf.pages:
-        text = page.extract_text()
-        texts.append(text)
-text = "".join(texts)
-#
-text= text.split('Basında Çıkan Haberler')[0]
+text= text_list[0].split('Basında Çıkan Haberler')[0]
 text = text.split('KAP ve Şirket Haberleri')[-1]
 #
-text = text.split('\n')[2:]
-del text[-1]
-news_list = []
-#
+text = text.split('\n')
+text_splitted = []
 for row in text:
+    if row != '':
+        text_splitted.append(row)
+#        
+text_splitted2 = []
+for row in text_splitted:
+    if row != '' and row !=' ' and row != '   ':
+        text_splitted2.append(row)
+news_list = []
+for row in text_splitted2:
     if '\uf0a7' in row:
         news_list.append(row.split('\uf0a7')[-1])
     else:
         news_list[-1] = news_list[-1] + row
-#
+ #
 news_list2 = []
 for row in news_list:
-    if ':' in row[0:40]:
+    if ':' in row[0:25] and 'SEKTÖRÜ' not in row[0:25]:
         news_list2.append(row)
     else:
         continue
 #
 codes = []
 news = []
-dates = [] 
 for row in news_list2:
     if ',' in row.split(':')[0]:
         for code in row.split(':')[0].split(','):
             codes.append(code)
-            news.append(row.split(':')[1])
-            dates.append(date)
+            news.append(row.split(':')[1].strip())
     elif '-' in row.split(':')[0]:
         for code in row.split(':')[0].split('-'):
             codes.append(code)
-            news.append(row.split(':')[1])
-            dates.append(date)            
+            news.append(row.split(':')[1].strip())         
     else:
         codes.append(row.split(':')[0])
-        news.append(row.split(':')[1])
-        dates.append(date)
+        news.append(row.split(':')[1].strip())
 #
 codes2 = []
 for code in codes:
-    codes2.append(code)
+    codes2.append(code.strip())
 #
-data = pd.DataFrame(list(zip(dates,codes2,news)))
-data.columns = ['tarih','hisse','haber']
+data = pd.DataFrame(list(zip(codes2,news)))
+data.columns = ['hisse','haber']    
 #
 data
