@@ -1,3 +1,68 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import yfinance as yf
+import pandas as pd
+import numpy as np
+
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+options = Options()
+options.headless = True
+options.add_argument("--window-size=1920,1200")
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+#
+link = "https://www.kap.org.tr/tr/Pazarlar"
+driver.get(link)
+#
+# YILDIZ PAZAR - GRUP 1
+yıldız1 = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[3]/div')
+yıldız2 = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[5]/div')
+ana1 = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[7]/div')
+ana2 = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[9]/div')
+gelişen = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[11]/div')
+yakın = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[13]/div')
+piyasa_öncesi = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[15]/div')
+yapılandırılmış = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[17]/div')
+nitelikli = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[19]/div')
+kesin = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[22]/div')
+kesin_nitelikli = driver.find_elements_by_xpath('/html/body/div[6]/div/div/div/div[2]/div/div[2]/div[24]/div')
+
+
+list1 = [yıldız1, yıldız2, ana1, ana2, gelişen, yakın, piyasa_öncesi, yapılandırılmış, nitelikli, kesin, kesin_nitelikli]
+
+codes = []
+names = []
+for piyasa in list1:
+    for div in piyasa[1:]:
+        codes.append(div.find_element_by_xpath('./div[2]/a').text)
+        names.append(div.find_element_by_xpath('./div[3]/a').text)
+#
+names_lower = []
+for name in names:
+    names_lower.append(name.lower())
+codes_lower = []
+for code in codes:
+    codes_lower.append(code.lower())
+#
+codes_adj = []
+for code in codes_lower:
+    codes_adj.append(code.replace('i̇', 'i'))
+names_adj = []
+for name in names_lower:
+    names_adj.append(name.replace('i̇', 'i'))
+    
+names_adj2 = []
+for name in names_adj:
+    if 'türkiye' in name:
+        names_adj2.append(name[7:])
+    else:
+        names_adj2.append(name)
+#
+names_adj = []
+for name in names_adj2:
+    names_adj.append(name.strip())
+#
+dict1 = dict(zip(names_adj, codes))
+#
 import re
 import pdfplumber
 import requests
@@ -25,7 +90,7 @@ def pdf_to_text(path):
     retstr.close()
     return text
 #
-pdf_file = "C:/Users/berat/Desktop/ak_yatırım.pdf"
+pdf_file = "C:/Users/berat/Desktop/ak_yatırım2.pdf"
 
 sirket_haberleri_pattern = '(?<=Şirket Haberleri).*?(?=Göstergeler)'
 text_list = []
@@ -61,5 +126,20 @@ news_list = []
 for i in news_list1:
     if 'sektör' not in i.lower()[0:55]:
         news_list.append(i)
-#output
-news_list
+#
+news_list_lower = []
+for row in news_list:
+    news_list_lower.append(row.lower())
+
+
+news_list_adj = []
+for row in news_list_lower:
+    news_list_adj.append(row.replace('i̇','i'))
+#
+matches = []
+for row in news_list_adj:
+    for name in dict1:
+        if row[0:6] in name[0:7] or row[0:4].lower() == dict1[f'{name}'].lower():
+            matches.append(dict1[f'{name}'])
+#
+matches
