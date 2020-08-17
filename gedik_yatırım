@@ -1,53 +1,164 @@
-import re
-import pdfplumber
 import requests
 import pandas as pd
-#
-pdf = pdfplumber.open("C:/Users/berat/Desktop/Gunluk_Bulten_05.06.2020.pdf")
-#
-texts = []
-for page in pdf.pages:
-    text = page.extract_text()
-    texts.append(text)
-text = "".join(texts)
-#
-text = text.split('Günlük Bülten / KAP Haberleri ')[-1]
-text = text.split('*Kamuyu Aydınlatma Platformu’na')[0]
-#
-text_splitted = text.split("\n")
-#
-pattern = re.compile(r'\d\d.\d\d.\d\d\d\d.\d\d.\d\d.\d\d')
-#
-list = []
-for row in text_splitted[1:]:
-    x = pattern.findall(row)
-    row = ' '.join([str(i) for i in x])
-    list.append(row)
-matcher = [x for x in list if x]
-#
-matches = []
-for row in text_splitted:
-    for match in matcher:
-        if match in row:
-            matches.append(row)
-#
-text = "".join(text_splitted[1:])
-#
-news_list = []
-for match in matches:
-    news_list.append(text.split(match)[0])
-    text = text.split(match)[1]
-news_list.append(text)
-#
-news = []
-for row in news_list[1:]:
-    news.append(row.strip())
-#
-codes = []
-for match in matches:
-    codes.append(match.split('/')[1][0:7].strip()[0:5].strip())
-#
-data = pd.DataFrame(zip(codes,news))
-data.columns = ['hisse','haber']
-#
-data
+import urllib.request
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import Select
+import numpy as np
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+import io
+import re
+import pause
+
+#-----------------------------------------------------------------------------------------
+
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+options = Options()
+options.headless = True
+options.add_argument("--window-size=1920,1200")
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+link = "https://www.gedik.com/piyasalar/butun-bultenler"
+driver.get(link)
+select = Select(driver.find_element_by_id('tags'))
+select.select_by_visible_text('Günlük Bülten')
+
+#-----------------------------------------------------------------------------------------
+
+def gedik_yatırım(n):
+    href = driver.find_elements_by_xpath('//div/a')[n] #-----------------------------------------------------------------
+    url = href.get_attribute("href")
+    pdf = 'gedik_yatırım_' + url.split('pdf')[0][-11:-1]
+    urllib.request.urlretrieve(url, f"{pdf}.pdf")
+    #--------------------------------------------------------------------------------------------------------------
+    def pdf_to_text(path):
+        manager = PDFResourceManager()
+        retstr = io.StringIO()
+        layout = LAParams(all_texts=True)
+        device = TextConverter(manager, retstr, laparams=layout)
+        filepath = open(path, 'rb')
+        interpreter = PDFPageInterpreter(manager, device)
+        for page in PDFPage.get_pages(filepath, check_extractable=False):
+            interpreter.process_page(page)
+        text = retstr.getvalue()
+        filepath.close()
+        device.close()
+        retstr.close()
+        return text
+    pdf_file = f"C:/Users/berat/pdfscrap/{pdf}.pdf"
+    sirket_haberleri_pattern = '(?<=KAP Haberleri).*?(?=Veri Takvimi)'
+    text_list = []
+    sirket_haber_list_1 =[]
+    text_list.append(pdf_to_text(pdf_file))
+    for text in text_list:
+        sirket_haber_list_1.append(re.findall(sirket_haberleri_pattern, text, re.DOTALL))
+    text = sirket_haber_list_1[0][0]
+    text_splitted1 = text.split("\n")
+    text_splitted = []
+    for row in text_splitted1:
+        if row != '' and row != ' ' and row != '  ' and row != '   ':
+            text_splitted.append(row)
+
+    text_splitted3 = []
+    for row in text_splitted:
+        if '*Kamuyu Aydınlatma  Platformu’na' not in row and 'gelen haberleri' not in row and 'Şirket haberleri araştırm' not in row and '444 0 435' not in row and 'ww.gedikyatirim.com.t' not in row and 'Günlük Bülten' not in row and 'SPK  ve  BIST  kararıyla  Tedb' not in row and 'buradan ulaşabil' not in row:
+            text_splitted3.append(row)
+
+    text_splitted = text_splitted3
+
+    #------------------------ MATCHING
+    pattern = re.compile(r'\d\d.\d\d.\d\d\d\d.\d\d.\d\d.\d\d')
+    list1 = []
+    for row in text_splitted[1:]:
+        x = pattern.findall(row)
+        row = ' '.join([str(i) for i in x])
+        list1.append(row)
+    matcher = [x for x in list1 if x]
+    #
+    matches = []
+    for row in text_splitted:
+        for match in matcher:
+            if match in row:
+                matches.append(row)
+    #
+    multiple1 = []
+    for i in range(0, len(matches)):
+        if '/' not in matches[i]:
+            multiple1.append(matches[i])
+
+    text_splitted4 = []
+    if len(multiple1)>0:
+        for i in range(0, len(text_splitted)):
+            for row in multiple1:
+                if row in text_splitted[i]:
+                    joined = text_splitted[i - 1] + row
+                    text_splitted4.append(joined)
+                    del text_splitted4[i-1]
+                else:
+                    text_splitted4.append(text_splitted[i])
+
+        text_splitted = text_splitted4
+
+    text = "".join(text_splitted[1:])
+    news_list = []
+    for match in matches:
+        news_list.append(text.split(match)[0])
+        text = text.split(match)[1]
+    news_list.append(text)
+    news_list = news_list[1:]
+    #
+
+    matches = []
+    for row in text_splitted:
+        for match in matcher:
+            if match in row:
+                matches.append(row)
+    #
+    multiple_codes1 = []
+    codes = []
+    for match in matches:
+        if ',' in match:
+            multiple_codes1.append(match.split('/')[1].split(','))
+            multiple_codes1_stripped = []
+            for row in multiple_codes1[0]:
+                multiple_codes1_stripped.append(row.strip())
+            multiple_codes1_stripped[-1] = multiple_codes1_stripped[-1][0:5].strip()
+            codes.append(multiple_codes1_stripped)
+        else:
+            codes.append(match.split('/')[1][0:7].strip()[0:5].strip())
+    #
+    tarih1 = text_splitted[0]
+    aylar1 = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+    aylar2 = ['01','02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    aylar = dict(zip(aylar1,aylar2))
+
+    for i in range(0,len(aylar1)):
+        if aylar1[i] in tarih1:
+            tarih2 = tarih1.split(aylar1[i])[0].strip() + '.' + aylar2[i] + '.' + tarih1.split(aylar1[i])[1].strip()
+    
+    codes_last = []
+    news_last = []
+    tarih = []
+    aracı_kurum = []
+
+    for i in range(0, len(news_list)):
+        if type(codes[i]) == list:
+            for code in codes[i]:
+                codes_last.append(code)
+                news_last.append(news_list[i])
+                tarih.append(tarih2)
+                aracı_kurum.append('Gedik Yatırım')
+
+        else:
+            codes_last.append(codes[i])
+            news_last.append(news_list[i])
+            tarih.append(tarih2)
+            aracı_kurum.append('Gedik Yatırım')
+    #------------------------------ DATA-FRAME
+    data = pd.DataFrame(zip(aracı_kurum,tarih,codes_last,news_last))
+    data.columns = ['aracı_kurum','tarih','hisse','haber']
+
+    #------------------------------ output
+    return data
