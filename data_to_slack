@@ -1,0 +1,33 @@
+slack_token = 'xoxb-1310569939731-1325102986545-NXbME5qV3uu5ERClSWjyo4i6'
+slack_channel = '#messagebot'
+slack_icon_url = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuGqps7ZafuzUsViFGIremEL2a3NR0KO0s0RTCMXmzmREJd5m4MA&s'
+slack_user_name = 'testbot'
+import requests
+import json
+def post_message_to_slack(text, blocks = None):
+    return requests.post('https://slack.com/api/chat.postMessage', {
+        'token': slack_token,
+        'channel': slack_channel,
+        'text': text,
+        'icon_url': slack_icon_url,
+        'username': slack_user_name,
+        'blocks': json.dumps(blocks) if blocks else None
+    }).json()	
+    
+#----------------------------------------------------------------------------------------------
+
+data = gedik_yatırım(4)
+#-----------------------------------------------------------------------------------------------
+data_to_slack = []
+for i in range(0,len(data)):
+    data_to_slack.append(data.iloc[0,0])
+    data_to_slack.append('')
+    data_to_slack.append(data.iloc[i,1])
+    data_to_slack.append(data.iloc[i,2])
+    data_to_slack.append(data.iloc[i,3])
+    data_to_slack.append('_______________________________________________________________________________')
+ 
+#--------------------------------------------------------------------------------------------------
+
+for row in data_to_slack:
+    post_message_to_slack(row)
