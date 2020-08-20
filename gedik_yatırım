@@ -11,9 +11,8 @@ from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 import io
 import re
-import pause
 
-#-----------------------------------------------------------------------------------------
+#--------------------------------
 
 DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
@@ -25,7 +24,11 @@ driver.get(link)
 select = Select(driver.find_element_by_id('tags'))
 select.select_by_visible_text('Günlük Bülten')
 
-#-----------------------------------------------------------------------------------------
+#-------------------------------------------------------
+
+driver.find_element_by_xpath('/html/body/div[2]/div[5]/div[1]/div/div[2]/div[11]/nav/span[3]/a').click()
+
+#|------------------------------------------------------------------
 
 def gedik_yatırım(n):
     href = driver.find_elements_by_xpath('//div/a')[n] #-----------------------------------------------------------------
@@ -68,20 +71,33 @@ def gedik_yatırım(n):
 
     text_splitted = text_splitted3
 
-    #------------------------ MATCHING
-    pattern = re.compile(r'\d\d.\d\d.\d\d\d\d.\d\d.\d\d.\d\d')
+    pattern = re.compile(r'\d\d\:\d\d\:\d\d')
     list1 = []
-    for row in text_splitted[1:]:
+    for row in text_splitted:
         x = pattern.findall(row)
         row = ' '.join([str(i) for i in x])
         list1.append(row)
     matcher = [x for x in list1 if x]
-    #
-    matches = []
+
+    matches2 = []
     for row in text_splitted:
         for match in matcher:
             if match in row:
-                matches.append(row)
+                matches2.append(row)
+
+    matches3 = []
+    for row in matches2:
+        if '/' not in row:
+            for i in range(0, len(text_splitted)):
+                if text_splitted[i] == row:
+                    a = text_splitted[i-1]
+            b = a + row
+            matches3.append(b)
+        else:
+            matches3.append(row)
+
+    matches = matches3
+
     #
     multiple1 = []
     for i in range(0, len(matches)):
@@ -109,13 +125,6 @@ def gedik_yatırım(n):
     news_list.append(text)
     news_list = news_list[1:]
     #
-
-    matches = []
-    for row in text_splitted:
-        for match in matcher:
-            if match in row:
-                matches.append(row)
-    #
     multiple_codes1 = []
     codes = []
     for match in matches:
@@ -128,7 +137,7 @@ def gedik_yatırım(n):
             codes.append(multiple_codes1_stripped)
         else:
             codes.append(match.split('/')[1][0:7].strip()[0:5].strip())
-    #
+
     tarih1 = text_splitted[0]
     aylar1 = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
     aylar2 = ['01','02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
@@ -137,7 +146,7 @@ def gedik_yatırım(n):
     for i in range(0,len(aylar1)):
         if aylar1[i] in tarih1:
             tarih2 = tarih1.split(aylar1[i])[0].strip() + '.' + aylar2[i] + '.' + tarih1.split(aylar1[i])[1].strip()
-    
+
     codes_last = []
     news_last = []
     tarih = []
