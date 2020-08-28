@@ -1,112 +1,105 @@
-#--------------------- IMPORTS
-import pdfplumber
-import requests
-import pandas as pd
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.pdfpage import PDFPage
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-import io
-import re
-import urllib.request 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-import yfinance as yf
-import pandas as pd
-import numpy as np
+def deniz_yatırım(n = 5):
+    link = "https://www.denizyatirim.com/raporlar/"
+    driver.get(link)
+    href = driver.find_elements_by_xpath('//div/a')[n]
+    url = href.get_attribute("href")
+    pdf = 'deniz_yatırım_' + url.split('GUNLUK_BULTEN_-_')[1][0:10]
+        #---------------------- GETTING AND DOWNLOADING THE PDF
+    urllib.request.urlretrieve(url, f"C:/Users/berat/pdfscrap/{pdf}.pdf")
 
-#---------------------- WEBDRIVER
-DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
-options = Options()
-options.headless = True
-options.add_argument("--window-size=1920,1200")
-driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+        #----------------------- EXTRACTING THE TEXT
+    def pdf_to_text(path):
+        manager = PDFResourceManager()
+        retstr = io.StringIO()
+        layout = LAParams(all_texts=True)
+        device = TextConverter(manager, retstr, laparams=layout)
+        filepath = open(path, 'rb')
+        interpreter = PDFPageInterpreter(manager, device)
+        for page in PDFPage.get_pages(filepath, check_extractable=False):
+            interpreter.process_page(page)
+        text = retstr.getvalue()
+        filepath.close()
+        device.close()
+        retstr.close()
+        return text
+        #
+    pdf_file = f"C:/Users/berat/pdfscrap/{pdf}.pdf"
+    text_list = []
+    text_list.append(pdf_to_text(pdf_file))
 
-#---------------------- LINK
-link = "https://www.denizyatirim.com/raporlar/"
-driver.get(link)
-href = driver.find_elements_by_xpath('//div/a')[5]
-url = href.get_attribute("href")
-pdf = 'deniz_yatırım_' + url.split('GUNLUK_BULTEN_-_')[1]
+        #---------------------------------- SETTING THE BOUNDARIES
+    text= text_list[0].split('Basında Çıkan Haberler')[0]
+    text = text.split('KAP ve Şirket Haberleri')[-1]
 
-#---------------------- GETTING AND DOWNLOADING THE PDF
-urllib.request.urlretrieve(url, "pdf.pdf")
+        #---------------------------------- TIDYING THE SPLITTED DATA
+    text = text.split('\n')
+    text_splitted = []
+    for row in text:
+        if row != '':
+            text_splitted.append(row)
+    text_splitted2 = []
+    for row in text_splitted:
+        if row != '' and row !=' ' and row != '   ':
+            text_splitted2.append(row)
 
-#----------------------- EXTRACTING THE TEXT
-def pdf_to_text(path):
-    manager = PDFResourceManager()
-    retstr = io.StringIO()
-    layout = LAParams(all_texts=True)
-    device = TextConverter(manager, retstr, laparams=layout)
-    filepath = open(path, 'rb')
-    interpreter = PDFPageInterpreter(manager, device)
-    for page in PDFPage.get_pages(filepath, check_extractable=False):
-        interpreter.process_page(page)
-    text = retstr.getvalue()
-    filepath.close()
-    device.close()
-    retstr.close()
-    return text
-#
-pdf_file = "C:/Users/berat/pdfscrap/deniz_yatırım_pdf.pdf"
-text_list = []
-text_list.append(pdf_to_text(pdf_file))
+    i = 0
+    text_splitted3 = []
+    while i in range(0,len(text_splitted2)):
+        if 'DENİZBANK YATIRIM' in text_splitted2[i]:
+            i = i + 3
+        text_splitted3.append(text_splitted2[i])
+        i = i + 1
 
-#---------------------------------- SETTING THE BOUNDARIES
-text= text_list[0].split('Basında Çıkan Haberler')[0]
-text = text.split('KAP ve Şirket Haberleri')[-1]
+    text_splitted2 = text_splitted3
+    
+        #---------------------------------- JOINING THE ROWS
+    news_list = []
+    for row in text_splitted2:
+        if '\uf0a7' in row:
+            news_list.append(row.split('\uf0a7')[-1])
+        else:
+            news_list[-1] = news_list[-1] + row
 
-#---------------------------------- TIDYING THE SPLITTED DATA
-text = text.split('\n')
-text_splitted = []
-for row in text:
-    if row != '':
-        text_splitted.append(row)
-text_splitted2 = []
-for row in text_splitted:
-    if row != '' and row !=' ' and row != '   ':
-        text_splitted2.append(row)
+        #----------------------------------- DELETING SEKTÖR NEWS
+    news_list2 = []
+    for row in news_list:
+        if ':' in row[0:25] and 'SEKTÖRÜ' not in row[0:25]:
+            news_list2.append(row)
+        else:
+            continue
 
-#---------------------------------- JOINING THE ROWS
-news_list = []
-for row in text_splitted2:
-    if '\uf0a7' in row:
-        news_list.append(row.split('\uf0a7')[-1])
-    else:
-        news_list[-1] = news_list[-1] + row
-        
-#----------------------------------- DELETING SEKTÖR NEWS
-news_list2 = []
-for row in news_list:
-    if ':' in row[0:25] and 'SEKTÖRÜ' not in row[0:25]:
-        news_list2.append(row)
-    else:
-        continue
+        #|------------------------------------- GETTING THE CODES AND NEWS SEPERATELY
+    codes = []
+    news = []
+    tarih = []
+    aracı_kurum = []
+    for row in news_list2:
+        if ',' in row.split(':',1)[0]:
+            for code in row.split(':',1)[0].split(','):
+                codes.append(code)
+                news.append(row.split(':',1)[1].strip())
+                tarih.append(url.split('GUNLUK_BULTEN_-_')[1][0:10])
+                aracı_kurum.append('Deniz Yatırım')
+        elif '-' in row.split(':',1)[0]:
+            for code in row.split(':',1)[0].split('-'):
+                codes.append(code)
+                news.append(row.split(':',1)[1].strip()) 
+                tarih.append(url.split('GUNLUK_BULTEN_-_')[1][0:10])
+                aracı_kurum.append('Deniz Yatırım')
+        else:
+            codes.append(row.split(':',1)[0])
+            news.append(row.split(':',1)[1].strip())
+            tarih.append(url.split('GUNLUK_BULTEN_-_')[1][0:10])
+            aracı_kurum.append('Deniz Yatırım')
 
-#|------------------------------------- GETTING THE CODES AND NEWS SEPERATELY
-codes = []
-news = []
-for row in news_list2:
-    if ',' in row.split(':')[0]:
-        for code in row.split(':')[0].split(','):
-            codes.append(code)
-            news.append(row.split(':')[1].strip())
-    elif '-' in row.split(':')[0]:
-        for code in row.split(':')[0].split('-'):
-            codes.append(code)
-            news.append(row.split(':')[1].strip())         
-    else:
-        codes.append(row.split(':')[0])
-        news.append(row.split(':')[1].strip())
-        
-#--------------------------------------------- STRIPPING SPACES
-codes2 = []
-for code in codes:
-    codes2.append(code.strip())
+        #--------------------------------------------- STRIPPING SPACES
+    codes2 = []
+    for code in codes:
+        codes2.append(code.strip())
 
-#---------------------------------------------- DATA-FRAME
-data = pd.DataFrame(list(zip(codes2,news)))
-data.columns = ['hisse','haber']
+        #---------------------------------------------- DATA-FRAME
+    data = pd.DataFrame(list(zip(aracı_kurum,tarih,codes2,news)))
+    data.columns = ['aracı_kurum','tarih','hisse','haber']
+    return data
 
-#----------------------------------------------- OUTPUT
-data
+deniz = deniz_yatırım()
