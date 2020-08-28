@@ -1,9 +1,39 @@
+#-----------IMPORTS----------#
+import requests
+import pandas as pd
+import urllib.request
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+import numpy as np
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+import io
+import re
+import time
+import yfinance as yf
+from datetime import datetime
+
+print('Importing Modules')
+
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+options = Options()
+options.headless = True
+options.add_argument("--window-size=1920,1200")
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+date = date.today()
+link = "https://www.gedik.com/piyasalar/butun-bultenler"
+driver.get(link)
+select = Select(driver.find_element_by_id('tags'))
+select.select_by_visible_text('Günlük Bülten')
+time.sleep(3)
 def gedik_yatırım(n = 4):
-    link = "https://www.gedik.com/piyasalar/butun-bultenler"
-    driver.get(link)
-    select = Select(driver.find_element_by_id('tags'))
-    select.select_by_visible_text('Günlük Bülten')
-    time.sleep(3)
     href = driver.find_elements_by_xpath('//div/a')[n] #-----------------------------------------------------------------
     url = href.get_attribute("href")
     pdf = 'gedik_yatırım_' + url.split('pdf')[0][-11:-1]
@@ -140,23 +170,37 @@ def gedik_yatırım(n = 4):
     news_last = []
     tarih = []
     aracı_kurum = []
-
+    time1 = []
+    news_id = []
+    k = 0
+    news_index = 0
+    import time
     for i in range(0, len(news_list)):
         if type(codes[i]) == list:
             for code in codes[i]:
                 codes_last.append(code)
                 news_last.append(news_list[i])
-                tarih.append(tarih2)
+                tarih.append(date)
                 aracı_kurum.append('Gedik Yatırım')
-
+                time1.append(datetime.now().time())
+                news_id.append(k)
+                k = k + 1
+                print(f'Written news index: {news_index}')
+                news_index = news_index + 1
         else:
             codes_last.append(codes[i])
             news_last.append(news_list[i])
             tarih.append(tarih2)
             aracı_kurum.append('Gedik Yatırım')
+            time1.append(datetime.now().time())
+            news_id.append(k)
+            k = k + 1
+            print(f'Written news index: {news_index}')
+            news_index = news_index + 1
+            
     #------------------------------ DATA-FRAME
-    data = pd.DataFrame(zip(aracı_kurum,tarih,codes_last,news_last))
-    data.columns = ['aracı_kurum','tarih','hisse','haber']
+    data = pd.DataFrame(zip(news_id, tarih, codes_last, news_last, aracı_kurum, time1))
+    data.columns = ['news_id', 'date', 'symbol','news','broker_name', 'timestamp']
     
     return data
     #------------------------------ output
