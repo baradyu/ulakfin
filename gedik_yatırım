@@ -1,40 +1,13 @@
-import requests
-import pandas as pd
-import urllib.request
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import Select
-import numpy as np
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.pdfpage import PDFPage
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-import io
-import re
-
-#--------------------------------
-
-DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
-options = Options()
-options.headless = True
-options.add_argument("--window-size=1920,1200")
-driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
-link = "https://www.gedik.com/piyasalar/butun-bultenler"
-driver.get(link)
-select = Select(driver.find_element_by_id('tags'))
-select.select_by_visible_text('Günlük Bülten')
-
-#-------------------------------------------------------
-
-driver.find_element_by_xpath('/html/body/div[2]/div[5]/div[1]/div/div[2]/div[11]/nav/span[3]/a').click()
-
-#|------------------------------------------------------------------
-
-def gedik_yatırım(n):
+def gedik_yatırım(n = 4):
+    link = "https://www.gedik.com/piyasalar/butun-bultenler"
+    driver.get(link)
+    select = Select(driver.find_element_by_id('tags'))
+    select.select_by_visible_text('Günlük Bülten')
+    time.sleep(3)
     href = driver.find_elements_by_xpath('//div/a')[n] #-----------------------------------------------------------------
     url = href.get_attribute("href")
     pdf = 'gedik_yatırım_' + url.split('pdf')[0][-11:-1]
-    urllib.request.urlretrieve(url, f"{pdf}.pdf")
+    urllib.request.urlretrieve(url, f"C:/Users/berat/pdfscrap/{pdf}.pdf")
     #--------------------------------------------------------------------------------------------------------------
     def pdf_to_text(path):
         manager = PDFResourceManager()
@@ -96,6 +69,9 @@ def gedik_yatırım(n):
         else:
             matches3.append(row)
 
+    if sum(c.isdigit() for c in text_splitted[1]) == 8:
+        matches3.insert(0, text_splitted[1])
+
     matches = matches3
 
     #
@@ -115,15 +91,28 @@ def gedik_yatırım(n):
                 else:
                     text_splitted4.append(text_splitted[i])
 
+    if len(text_splitted4) != 0:
         text_splitted = text_splitted4
 
+
+    text_splitted5 = []
+    for row in text_splitted:
+        text_splitted5.append(row.strip())
+    text_splitted = text_splitted5
+    text_splitted_son = []
+    for row in text_splitted:
+        text_splitted_son.append(row + ' ')
+    text_splitted = text_splitted_son
     text = "".join(text_splitted[1:])
+
     news_list = []
+    text1 = text
     for match in matches:
-        news_list.append(text.split(match)[0])
-        text = text.split(match)[1]
+        news_list.append(text1.split(match)[0])
+        text1 = text1.split(match)[1]
     news_list.append(text)
     news_list = news_list[1:]
+
     #
     multiple_codes1 = []
     codes = []
@@ -168,6 +157,7 @@ def gedik_yatırım(n):
     #------------------------------ DATA-FRAME
     data = pd.DataFrame(zip(aracı_kurum,tarih,codes_last,news_last))
     data.columns = ['aracı_kurum','tarih','hisse','haber']
-
-    #------------------------------ output
+    
     return data
+    #------------------------------ output
+gedik = gedik_yatırım()
