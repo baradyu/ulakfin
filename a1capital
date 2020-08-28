@@ -2,13 +2,13 @@ from selenium.webdriver.chrome.options import Options
 import pandas as pd
 import requests as req
 import re
-from openpyxl import load_workbook
 from selenium import webdriver
 from datetime import date
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+import yfinance as yf
 
 DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
@@ -44,7 +44,7 @@ if month == '11':
 if month == '12':
     month1 = 'aralik'
     
-driver.get(f'https://a1capital.com.tr/26-{month1}-gunluk-bulten-2/')
+driver.get(f'https://a1capital.com.tr/{day}-{month1}-gunluk-bulten-4/')
 lines1 = driver.find_elements_by_xpath('/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[2]/tbody/tr[2]/td/table/tbody/tr')
 
 codes = []
@@ -56,7 +56,7 @@ for row in lines1:
     news.append(row.find_element_by_xpath('./td[4]/p/span').text)
     date_list.append(date)
     aracı_kurum_list.append('A1 Capital')
-    
+
 data1 = pd.DataFrame(list(zip(date_list, codes, news)))
 data1.columns = ['date', 'code','sentiment']
 
@@ -69,7 +69,7 @@ for i in range(0, len(codes)):
     if 'BORSA' not in codes[i]:
         codes_last1.append(codes[i])
         news_last1.append(news[i])
-        
+
 codes_last = []
 news_last = []
 for i in range(0, len(codes_last1)):
@@ -80,7 +80,6 @@ for i in range(0, len(codes_last1)):
     else:
         codes_last.append(codes_last1[i])
         news_last.append(news_last1[i])
-        
+
 data1 = pd.DataFrame(list(zip(aracı_kurum_list, date_list, codes_last, news_last)))
 data1.columns = ['aracı_kurum', 'date', 'code','sentiment']
-
