@@ -1,3 +1,50 @@
+#-----------IMPORTS----------#
+import requests
+import pandas as pd
+import urllib.request
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+import numpy as np
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+import io
+import re
+import time, os
+import yfinance as yf
+from datetime import date
+from datetime import datetime
+
+print('Importing Modules')
+
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+options = Options()
+options.headless = True
+options.add_argument("--window-size=1920,1200")
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+
+def pdf_to_text(path):
+    manager = PDFResourceManager()
+    retstr = io.StringIO()
+    layout = LAParams(all_texts=True)
+    device = TextConverter(manager, retstr, laparams=layout)
+    filepath = open(path, 'rb')
+    interpreter = PDFPageInterpreter(manager, device)
+    for page in PDFPage.get_pages(filepath, check_extractable=False):
+        interpreter.process_page(page)
+    text = retstr.getvalue()
+    filepath.close()
+    device.close()
+    retstr.close()
+    return text
+date = date.today()
+
 #------BMD YATIRIM--------------------------#
 link = "https://www.bmd.com.tr/"
 driver.get(link)
@@ -7,12 +54,14 @@ driver.get(url)
 href2 = driver.find_elements_by_xpath("//div/a[@target='_blank']")[2]
 url2 = href2.get_attribute("href")
 pdf = "bmd_yatırım_" + url2.split('pdf')[0][-11:-1]
+print('Downloading PDF')
 urllib.request.urlretrieve(url2, f"C:/Users/berat/pdfscrap/{pdf}.pdf")
+print('PDF is downloaded')
 pdf_file = f"C:/Users/berat/pdfscrap/{pdf}.pdf"
 
 tarih = url2.split('pdf')[0][-11:-1]
 tarih = tarih.replace('_', '.')
-
+date = date.today()
 #
 if 'ŞİRKET HABERLERİ' in pdf_to_text(pdf_file):
     sirket_haberleri_pattern = '(?<=Şirket Haberleri).*?(?=BİST VERİLERİ)'
@@ -20,6 +69,8 @@ if 'ŞİRKET HABERLERİ' in pdf_to_text(pdf_file):
     text_list.append(pdf_to_text(pdf_file))
     text_list[0] = text_list[0].split('HACİM')[0]
     text_list[0] = text_list[0].split('ŞİRKET HABERLERİ')[1]
+    
+    print('Splitting the text between HACİM and ŞİRKET HABERLERİ')
 
     text_splitted = text_list[0].split('\n')
     text_splitted = [i for i in text_splitted if i]
@@ -38,24 +89,42 @@ if 'ŞİRKET HABERLERİ' in pdf_to_text(pdf_file):
 
     codes = []
     aracı_kurum = []
-    date = []
+    date_list = []
     for row in news_list1:
         aracı_kurum.append('BMD Yatırım')
         codes.append(row[0:5])
-        date.append(tarih)
-
+        date_list.append(tarih)
+    
+    
+    news_id = []
+    time = []
+    news_index = 0
+    k = 0
     codes1 = []
     for code in codes:
         if '(' in code:
             codes1.append(code[1:])
+            time.append(datetime.now().time())
+            news_id.append(k)
+            k = k + 1
+            print(f'Written news index: {news_index}')
+            news_index = news_index + 1
         else:
             codes1.append(code)
-
+            time.append(datetime.now().time())
+            news_id.append(k)
+            k = k + 1
+            print(f'Written news index: {news_index}')
+            news_index = news_index + 1
+            
+    if len(codes) == news_index:
+        print('All data is succesfully written')
+            
     codes = codes1
 
     news = []
     for row in news_list1:
         news.append(row[5:])
 
-    bmd = pd.DataFrame(list(zip(aracı_kurum, date, codes, news)))
-    bmd.columns = ['aracı_kurum','tarih','hisse','haber']
+    data = pd.DataFrame(list(zip(news_id, date_list, codes, news, aracı_kurum_list, time)))
+    data.columns = ['news_id', 'date', 'symbol','news','broker_name', 'timestamp']
