@@ -190,7 +190,7 @@ def gedik_yatırım(n = 4):
         else:
             codes_last.append(codes[i])
             news_last.append(news_list[i])
-            tarih.append(tarih2)
+            tarih.append(date)
             aracı_kurum.append('Gedik Yatırım')
             time1.append(datetime.now().time())
             news_id.append(k)
