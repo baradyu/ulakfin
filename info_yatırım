@@ -1,42 +1,34 @@
-#-----------IMPORTS----------#
-import requests
+# -----------IMPORTS----------#
 import pandas as pd
-import urllib.request
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import numpy as np
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.pdfpage import PDFPage
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-import io
-import re
-import time
-import yfinance as yf
-from datetime import date
+import datetime
+import openpyxl
 
 print('Importing Modules')
 
-DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver'  # BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
-date = date.today()
+date = datetime.datetime.today()
 
-def info_yatırım():
-    top_bulten_xpath = "//*[@id='post-19576']/div/div/div/div/div/div[2]/div/div/div/div/div[1]/div/div/div[1]/div/div/div/div[5]/div[1]/div/a/div/img"
+
+def info_yatirim():
+    top_bulten_xpath = "//*[@id='post-19576']/div/div/div/div/div/div[2]/div/div/div/div/div[1]/" \
+                       "div/div/div[1]/div/div/div/div[5]/div[1]/div/a/div/img"
     driver.get("https://infoyatirim.com/hisse-viop-bulteni/page/1/")
     driver.find_element_by_xpath(top_bulten_xpath).click()
     src = driver.find_element_by_css_selector("iframe").get_attribute("src")
     driver.get(src)
     try:
-        WebDriverWait(driver, timeout=20).until(EC.visibility_of_all_elements_located((By.XPATH, "//table/tbody/tr/td/ul/li/b/span")))
+        WebDriverWait(driver, timeout=20).until(
+            EC.visibility_of_all_elements_located((By.XPATH, "//table/tbody/tr/td/ul/li/b/span")))
     except TimeoutException:
         print("Timed out waiting for page to load")
         driver.quit()
@@ -45,19 +37,19 @@ def info_yatırım():
     news_list1 = []
     news_list1_codes = []
     date_list = []
-    aracı_kurum = []
+    araci_kurum = []
 
     for news in sirket_haberleri:
         try:
             if '&' in news.find_element_by_xpath('./b/span').text:
-                for i in range(0,len(news.find_element_by_xpath('./b/span').text.split(' &'))):
+                for i in range(0, len(news.find_element_by_xpath('./b/span').text.split(' &'))):
                     news_list1_codes.append(news.find_element_by_xpath('./b/span').text.split('–')[0].split(' &')[i])
                     if '–' in news.find_element_by_xpath('./span').text:
                         news_list1.append(news.find_element_by_xpath('./span').text[1:].strip())
                     else:
                         news_list1.append(news.find_element_by_xpath('./span').text)
                     date_list.append(date)
-                    aracı_kurum.append('İnfo Yatırım')
+                    araci_kurum.append('İnfo Yatırım')
             else:
                 if '–' in news.find_element_by_xpath('./span').text:
                     news_list1.append(news.find_element_by_xpath('./span').text[1:].strip())
@@ -65,7 +57,7 @@ def info_yatırım():
                     news_list1.append(news.find_element_by_xpath('./span').text)
                 news_list1_codes.append(news.find_element_by_xpath('./b/span').text.split('–')[0])
                 date_list.append(date)
-                aracı_kurum.append('İnfo Yatırım')
+                araci_kurum.append('İnfo Yatırım')
         except:
             print('xd')
         finally:
@@ -77,12 +69,12 @@ def info_yatırım():
                     news_list1.append(news.find_element_by_xpath('./span').text)
                 news_list1_codes.append(news.find_element_by_xpath('./b/span').text.split('–')[0])
                 date_list.append(date)
-                aracı_kurum.append('İnfo Yatırım')
+                araci_kurum.append('İnfo Yatırım')
 
-    #data1 - Sirket haberleri
+    # data1 - Sirket haberleri
     data1 = pd.DataFrame(list(zip(date_list, news_list1_codes, news_list1)))
     data1.index = news_list1_codes
-    data1.columns = ['date', 'code','sentiment']
+    data1.columns = ['date', 'code', 'sentiment']
     data1 = data1[data1.sentiment != '']
 
     codes = data1['code'].tolist()
@@ -93,7 +85,7 @@ def info_yatırım():
     time1 = []
     news_id = []
     date1 = []
-    aracı_kurum1 = []
+    araci_kurum1 = []
     k = 0
     news_index = 0
     for i in range(0, len(codes)):
@@ -101,27 +93,32 @@ def info_yatırım():
             for code in codes[i].split('&'):
                 codes1.append(code.strip())
                 news1.append(news[i])
-                time1.append(datetime.now().time())
+                time1.append(datetime.datetime.today().now().time())
                 news_id.append(k)
-                date1.append(date)
-                aracı_kurum1.append('İnfo Yatırım')
+                date1.append((datetime.datetime.now().date()))
+                araci_kurum1.append('İnfo Yatırım')
                 k = k + 1
                 print(f'Written news index: {news_index}')
                 news_index = news_index + 1
         else:
             codes1.append(codes[i].strip())
             news1.append(news[i])
-            time1.append(datetime.now().time())
+            time1.append(datetime.datetime.today().now().time())
             news_id.append(k)
-            date1.append(date)
-            aracı_kurum1.append('İnfo Yatırım')
+            date1.append((datetime.datetime.now().date()))
+            araci_kurum1.append('İnfo Yatırım')
             k = k + 1
             print(f'Written news index: {news_index}')
             news_index = news_index + 1
-            
-    #data1 - Sirket haberleri
-    data = pd.DataFrame(list(zip(news_id, date1, codes1, news1, aracı_kurum1, time1)))
-    data.columns = ['news_id', 'date', 'symbol','news','broker_name', 'timestamp']
+
+    # data1 - Sirket haberleri
+    data = pd.DataFrame(list(zip(news_id, date1, codes1, news1, araci_kurum1, time1)))
+    data.columns = ['news_id', 'date', 'symbol', 'news', 'broker_name', 'timestamp']
     return data
 
-info = info_yatırım()
+
+info = info_yatirim()
+
+print(info)
+
+info.to_excel(r"C:/Users/berat/Ulakfin/Database/DATAs/info_data.xlsx")
