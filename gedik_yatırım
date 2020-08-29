@@ -1,15 +1,10 @@
-#-----------IMPORTS----------#
-import requests
+# -----------IMPORTS----------#
+print('Importing modules...')
 import pandas as pd
 import urllib.request
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-import numpy as np
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.converter import TextConverter
@@ -17,28 +12,34 @@ from pdfminer.layout import LAParams
 import io
 import re
 import time
-import yfinance as yf
-from datetime import datetime
+import datetime
+print('Modules imported.')
 
-print('Importing Modules')
-
-DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver'  # BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
-date = date.today()
+print('Webdriver is arrenged.')
+
+print('Getting the url')
 link = "https://www.gedik.com/piyasalar/butun-bultenler"
 driver.get(link)
 select = Select(driver.find_element_by_id('tags'))
 select.select_by_visible_text('Günlük Bülten')
 time.sleep(3)
-def gedik_yatırım(n = 4):
-    href = driver.find_elements_by_xpath('//div/a')[n] #-----------------------------------------------------------------
+print('We are on the website.')
+
+def gedik_yatırım(n=4):
+    href = driver.find_elements_by_xpath('//div/a')[
+        n]  # -----------------------------------------------------------------
     url = href.get_attribute("href")
     pdf = 'gedik_yatırım_' + url.split('pdf')[0][-11:-1]
-    urllib.request.urlretrieve(url, f"C:/Users/berat/pdfscrap/{pdf}.pdf")
-    #--------------------------------------------------------------------------------------------------------------
+    print('Downloading PDF to: C:/Users/berat/Documents/pyDatabase/PDFs')
+    urllib.request.urlretrieve(url, f"C:/Users/berat/Documents/pyDatabase/PDFs/{pdf}.pdf")
+    print('PDF is downloaded')
+
+    # PDF MINER FUNCTION--------------------------------------------------------------------------------------------------------------
     def pdf_to_text(path):
         manager = PDFResourceManager()
         retstr = io.StringIO()
@@ -53,27 +54,32 @@ def gedik_yatırım(n = 4):
         device.close()
         retstr.close()
         return text
-    pdf_file = f"C:/Users/berat/pdfscrap/{pdf}.pdf"
+
+    #Getting the data between 'KAP Haberleri' and 'Veri Takvimi'
+    pdf_file = f"C:/Users/berat/Documents/pyDatabase/PDFs/{pdf}.pdf"
     sirket_haberleri_pattern = '(?<=KAP Haberleri).*?(?=Veri Takvimi)'
     text_list = []
-    sirket_haber_list_1 =[]
+    sirket_haber_list_1 = []
     text_list.append(pdf_to_text(pdf_file))
     for text in text_list:
         sirket_haber_list_1.append(re.findall(sirket_haberleri_pattern, text, re.DOTALL))
     text = sirket_haber_list_1[0][0]
     text_splitted1 = text.split("\n")
     text_splitted = []
+
+    # Deleting empty elements in our text's row list.
     for row in text_splitted1:
         if row != '' and row != ' ' and row != '  ' and row != '   ':
             text_splitted.append(row)
 
+    # Deleting the unwanted informative lines.
     text_splitted3 = []
     for row in text_splitted:
         if '*Kamuyu Aydınlatma  Platformu’na' not in row and 'gelen haberleri' not in row and 'Şirket haberleri araştırm' not in row and '444 0 435' not in row and 'ww.gedikyatirim.com.t' not in row and 'Günlük Bülten' not in row and 'SPK  ve  BIST  kararıyla  Tedb' not in row and 'buradan ulaşabil' not in row:
             text_splitted3.append(row)
-
     text_splitted = text_splitted3
 
+    # Getting the elements with HH:MM::SS
     pattern = re.compile(r'\d\d\:\d\d\:\d\d')
     list1 = []
     for row in text_splitted:
@@ -82,18 +88,24 @@ def gedik_yatırım(n = 4):
         list1.append(row)
     matcher = [x for x in list1 if x]
 
+    # Finding the rows with elements chosen above
     matches2 = []
     for row in text_splitted:
         for match in matcher:
             if match in row:
                 matches2.append(row)
 
+    # Rearranging the choosen rows if it is splitted. (Like, the pattern we used above is dropped to the next line)
+    """""
+    (Firm Name) / (Firm symbol).... DD.AA.YYYY
+    HH:MM:SS
+    """""
     matches3 = []
     for row in matches2:
         if '/' not in row:
             for i in range(0, len(text_splitted)):
                 if text_splitted[i] == row:
-                    a = text_splitted[i-1]
+                    a = text_splitted[i - 1]
             b = a + row
             matches3.append(b)
         else:
@@ -104,26 +116,26 @@ def gedik_yatırım(n = 4):
 
     matches = matches3
 
-    #
+
+    # Arranging the rows if there is multiple firms with the same news
     multiple1 = []
     for i in range(0, len(matches)):
         if '/' not in matches[i]:
             multiple1.append(matches[i])
 
     text_splitted4 = []
-    if len(multiple1)>0:
+    if len(multiple1) > 0:
         for i in range(0, len(text_splitted)):
             for row in multiple1:
                 if row in text_splitted[i]:
                     joined = text_splitted[i - 1] + row
                     text_splitted4.append(joined)
-                    del text_splitted4[i-1]
+                    del text_splitted4[i - 1]
                 else:
                     text_splitted4.append(text_splitted[i])
 
     if len(text_splitted4) != 0:
         text_splitted = text_splitted4
-
 
     text_splitted5 = []
     for row in text_splitted:
@@ -157,32 +169,24 @@ def gedik_yatırım(n = 4):
         else:
             codes.append(match.split('/')[1][0:7].strip()[0:5].strip())
 
-    tarih1 = text_splitted[0]
-    aylar1 = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
-    aylar2 = ['01','02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    aylar = dict(zip(aylar1,aylar2))
-
-    for i in range(0,len(aylar1)):
-        if aylar1[i] in tarih1:
-            tarih2 = tarih1.split(aylar1[i])[0].strip() + '.' + aylar2[i] + '.' + tarih1.split(aylar1[i])[1].strip()
-
+    #Preparing the last form of lists
+    print('Filling the lists')
     codes_last = []
     news_last = []
-    tarih = []
+    date_list = []
     aracı_kurum = []
     time1 = []
     news_id = []
     k = 0
     news_index = 0
-    import time
     for i in range(0, len(news_list)):
         if type(codes[i]) == list:
             for code in codes[i]:
                 codes_last.append(code)
                 news_last.append(news_list[i])
-                tarih.append(date)
+                date_list.append(datetime.datetime.today().now().date() - datetime.timedelta(days=1))
                 aracı_kurum.append('Gedik Yatırım')
-                time1.append(datetime.now().time())
+                time1.append(datetime.datetime.today().now().time())
                 news_id.append(k)
                 k = k + 1
                 print(f'Written news index: {news_index}')
@@ -190,18 +194,26 @@ def gedik_yatırım(n = 4):
         else:
             codes_last.append(codes[i])
             news_last.append(news_list[i])
-            tarih.append(date)
+            date_list.append(datetime.datetime.now().date() - datetime.timedelta(days=1))
             aracı_kurum.append('Gedik Yatırım')
-            time1.append(datetime.now().time())
+            time1.append(datetime.datetime.today().now().time())
             news_id.append(k)
             k = k + 1
             print(f'Written news index: {news_index}')
             news_index = news_index + 1
-            
-    #------------------------------ DATA-FRAME
-    data = pd.DataFrame(zip(news_id, tarih, codes_last, news_last, aracı_kurum, time1))
-    data.columns = ['news_id', 'date', 'symbol','news','broker_name', 'timestamp']
-    
+
+    if len(codes) == news_index + 1:
+        print('All data is succesfully written')
+
+    # ------------------------------ DATA-FRAME
+    data = pd.DataFrame(zip(news_id, date_list, codes_last, news_last, aracı_kurum, time1))
+    data.columns = ['news_id', 'date', 'symbol', 'news', 'broker_name', 'timestamp']
+
     return data
-    #------------------------------ output
+    # ------------------------------ output
+
 gedik = gedik_yatırım()
+
+print(gedik)
+
+gedik.to_excel("gedik_data.xlsx")
