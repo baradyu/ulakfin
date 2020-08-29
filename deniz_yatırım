@@ -1,46 +1,35 @@
-#-----------IMPORTS----------#
-print('Importing Modules')
-import requests
+# -----------IMPORTS----------#
 import pandas as pd
 import urllib.request
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import Select
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-import numpy as np
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 import io
-import re
-import time, os
-import yfinance as yf
-from datetime import date
+import datetime
+import openpyxl
 
 print('Modules Imported')
 
-DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver'  # BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
-date = date.today()
 
-def deniz_yatırım(n = 5):
+def deniz_yatirim(n=5):
     link = "https://www.denizyatirim.com/raporlar/"
     driver.get(link)
     href = driver.find_elements_by_xpath('//div/a')[n]
     url = href.get_attribute("href")
     pdf = 'deniz_yatırım_' + url.split('GUNLUK_BULTEN_-_')[1][0:10]
-        #---------------------- GETTING AND DOWNLOADING THE PDF
-    urllib.request.urlretrieve(url, f"C:/Users/berat/pdfscrap/{pdf}.pdf")
+    # ---------------------- GETTING AND DOWNLOADING THE PDF
+    urllib.request.urlretrieve(url, f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf")
 
-        #----------------------- EXTRACTING THE TEXT
+    # ----------------------- EXTRACTING THE TEXT
     def pdf_to_text(path):
         manager = PDFResourceManager()
         retstr = io.StringIO()
@@ -56,15 +45,15 @@ def deniz_yatırım(n = 5):
         retstr.close()
         return text
         #
-    pdf_file = f"C:/Users/berat/pdfscrap/{pdf}.pdf"
-    text_list = []
-    text_list.append(pdf_to_text(pdf_file))
 
-        #---------------------------------- SETTING THE BOUNDARIES
-    text= text_list[0].split('Basında Çıkan Haberler')[0]
+    pdf_file = f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf"
+    text_list = [pdf_to_text(pdf_file)]
+
+    # ---------------------------------- SETTING THE BOUNDARIES
+    text = text_list[0].split('Basında Çıkan Haberler')[0]
     text = text.split('KAP ve Şirket Haberleri')[-1]
 
-        #---------------------------------- TIDYING THE SPLITTED DATA
+    # ---------------------------------- TIDYING THE SPLITTED DATA
     text = text.split('\n')
     text_splitted = []
     for row in text:
@@ -72,20 +61,20 @@ def deniz_yatırım(n = 5):
             text_splitted.append(row)
     text_splitted2 = []
     for row in text_splitted:
-        if row != '' and row !=' ' and row != '   ':
+        if row != '' and row != ' ' and row != '   ':
             text_splitted2.append(row)
 
     i = 0
     text_splitted3 = []
-    while i in range(0,len(text_splitted2)):
+    while i in range(0, len(text_splitted2)):
         if 'DENİZBANK YATIRIM' in text_splitted2[i]:
             i = i + 3
         text_splitted3.append(text_splitted2[i])
         i = i + 1
 
     text_splitted2 = text_splitted3
-    
-        #---------------------------------- JOINING THE ROWS
+
+    # ---------------------------------- JOINING THE ROWS
     news_list = []
     for row in text_splitted2:
         if '\uf0a7' in row:
@@ -93,7 +82,7 @@ def deniz_yatırım(n = 5):
         else:
             news_list[-1] = news_list[-1] + row
 
-        #----------------------------------- DELETING SEKTÖR NEWS
+        # ----------------------------------- DELETING SEKTÖR NEWS
     news_list2 = []
     for row in news_list:
         if ':' in row[0:25] and 'SEKTÖRÜ' not in row[0:25]:
@@ -101,60 +90,65 @@ def deniz_yatırım(n = 5):
         else:
             continue
 
-        #|------------------------------------- GETTING THE CODES AND NEWS SEPERATELY
+        # |------------------------------------- GETTING THE CODES AND NEWS SEPERATELY
     codes = []
     news = []
     tarih = []
-    aracı_kurum = []
+    araci_kurum = []
     news_id = []
     time = []
     news_index = 0
     k = 0
     for row in news_list2:
-        if ',' in row.split(':',1)[0]:
-            for code in row.split(':',1)[0].split(','):
+        if ',' in row.split(':', 1)[0]:
+            for code in row.split(':', 1)[0].split(','):
                 codes.append(code)
-                news.append(row.split(':',1)[1].strip())
-                tarih.append(date)
-                aracı_kurum.append('Deniz Yatırım')
-                time.append(datetime.now().time())
+                news.append(row.split(':', 1)[1].strip())
+                tarih.append((datetime.datetime.now().date()))
+                araci_kurum.append('Deniz Yatırım')
+                time.append(datetime.datetime.today().now().time())
                 news_id.append(k)
                 k = k + 1
                 print(f'Written news index: {news_index}')
                 news_index = news_index + 1
-        elif '-' in row.split(':',1)[0]:
-            for code in row.split(':',1)[0].split('-'):
+        elif '-' in row.split(':', 1)[0]:
+            for code in row.split(':', 1)[0].split('-'):
                 codes.append(code)
-                news.append(row.split(':',1)[1].strip()) 
-                tarih.append(date)
-                aracı_kurum.append('Deniz Yatırım')
-                time.append(datetime.now().time())
+                news.append(row.split(':', 1)[1].strip())
+                tarih.append((datetime.datetime.now().date()))
+                araci_kurum.append('Deniz Yatırım')
+                time.append(datetime.datetime.today().now().time())
                 news_id.append(k)
                 k = k + 1
                 print(f'Written news index: {news_index}')
                 news_index = news_index + 1
         else:
-            codes.append(row.split(':',1)[0])
-            news.append(row.split(':',1)[1].strip())
-            tarih.append(date)
-            aracı_kurum.append('Deniz Yatırım')
-            time.append(datetime.now().time())
+            codes.append(row.split(':', 1)[0])
+            news.append(row.split(':', 1)[1].strip())
+            tarih.append((datetime.datetime.now().date()))
+            araci_kurum.append('Deniz Yatırım')
+            time.append(datetime.datetime.today().now().time())
             news_id.append(k)
             k = k + 1
             print(f'Written news index: {news_index}')
             news_index = news_index + 1
 
-        #--------------------------------------------- STRIPPING SPACES
+        # --------------------------------------------- STRIPPING SPACES
     codes2 = []
     for code in codes:
         codes2.append(code.strip())
-        
+
     if len(codes) == news_index:
         print('All data is succesfully written')
 
-        #---------------------------------------------- DATA-FRAME
-    data = pd.DataFrame(list(zip(news_id, tarih, codes, news, aracı_kurum, time)))
-    data.columns = ['news_id', 'date', 'symbol','news','broker_name', 'timestamp']
+        # ---------------------------------------------- DATA-FRAME
+    data = pd.DataFrame(list(zip(news_id, tarih, codes, news, araci_kurum, time)))
+    data.columns = ['news_id', 'date', 'symbol', 'news', 'broker_name', 'timestamp']
     return data
 
-deniz = deniz_yatırım()
+
+deniz = deniz_yatirim()
+
+print(deniz)
+
+deniz.to_excel(r"C:/Users/berat/Ulakfin/Database/DATAs/deniz_data.xlsx")
