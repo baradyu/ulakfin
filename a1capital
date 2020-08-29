@@ -1,27 +1,20 @@
-#-----------IMPORTS----------#
+# -----------IMPORTS----------#
 from selenium.webdriver.chrome.options import Options
 import pandas as pd
-import requests as req
-import re
 from selenium import webdriver
-from datetime import date
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-from datetime import datetime
+import datetime
 
 print('Importing Modules')
 
-DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver' #BILGISAYARDA chromedriver'ın bulunduğu yer
+DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver'  # BILGISAYARDA chromedriver'ın bulunduğu yer
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
-#-------------------Converting to readible date pattern
+# -------------------Converting to readible date pattern
 print('Converting to readible date pattern')
-date = date.today()
+date = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
 day = str(date)[8:10]
 month = str(date)[5:7]
 if month == '01':
@@ -49,22 +42,23 @@ if month == '11':
 if month == '12':
     month1 = 'aralik'
 print('Converted to readible date pattern')
-    
+
 driver.get(f'https://a1capital.com.tr/{day}-{month1}-gunluk-bulten-4/')
-lines1 = driver.find_elements_by_xpath('/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[2]/tbody/tr[2]/td/table/tbody/tr')
+lines1 = driver.find_elements_by_xpath(
+    '/html/body/div[1]/div/div/div[2]/div/article/div/div/div[1]/div/div/div[2]/table[2]/tbody/tr[2]/td/table/tbody/tr')
 
 codes = []
 news = []
+araci_kurum = []
 date_list = []
-aracı_kurum_list = []
 for row in lines1:
     codes.append(row.find_element_by_xpath('./td[2]/p/b/span').text)
     news.append(row.find_element_by_xpath('./td[4]/p/span').text)
-    date_list.append(date)
-    aracı_kurum_list.append('A1 Capital')
+    araci_kurum.append('A1 Capital')
+    date_list.append((datetime.datetime.today() - datetime.timedelta(days=1)).date())
 
 data1 = pd.DataFrame(list(zip(date_list, codes, news)))
-data1.columns = ['date', 'code','sentiment']
+data1.columns = ['date', 'code', 'sentiment']
 
 codes = data1['code'].tolist()
 news = data1['sentiment'].tolist()
@@ -80,6 +74,7 @@ codes = []
 news = []
 news_id = []
 time = []
+date_list = []
 news_index = 0
 k = 0
 for i in range(0, len(codes_last1)):
@@ -88,7 +83,8 @@ for i in range(0, len(codes_last1)):
             codes.append(code.strip())
             news.append(news_last1[i])
             news_id.append(k)
-            time.append(datetime.now().time())
+            time.append(datetime.datetime.today().now().time())
+            date_list.append((datetime.datetime.now().date()))
             print(f'Written news index: {news_index}')
             news_index = news_index + 1
             k = k + 1
@@ -96,13 +92,19 @@ for i in range(0, len(codes_last1)):
         codes.append(codes_last1[i])
         news.append(news_last1[i])
         news_id.append(k)
-        time.append(datetime.now().time())
+        time.append(datetime.datetime.today().now().time())
+        date_list.append((datetime.datetime.now().date()))
         print(f'Written news index: {news_index}')
         news_index = news_index + 1
         k = k + 1
-        
+
 if len(codes) == news_index:
     print('All data is succesfully written')
-        
-data = pd.DataFrame(list(zip(news_id, date_list, codes, news, aracı_kurum_list, time)))
-data.columns = ['news_id', 'date', 'symbol','news','broker_name', 'timestamp']
+
+data = pd.DataFrame(list(zip(news_id, date_list, codes, news, araci_kurum, time)))
+data.columns = ['news_id', 'date', 'symbol', 'news', 'broker_name', 'timestamp']
+
+print(data)
+
+data.to_excel(r"C:/Users/berat/Ulakfin/Database/DATAs/a1capital_data.xlsx")
+
