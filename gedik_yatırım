@@ -12,6 +12,7 @@ import io
 import re
 import time
 import datetime
+import openpyxl
 print('Modules imported.')
 
 DRIVER_PATH = 'C:/Users/berat/webdriver/chromedriver'  # BILGISAYARDA chromedriver'ın bulunduğu yer
@@ -35,8 +36,8 @@ def gedik_yatirim(n=4):
         n]  # -----------------------------------------------------------------
     url = href.get_attribute("href")
     pdf = 'gedik_yatırım_' + url.split('pdf')[0][-11:-1]
-    print('Downloading PDF to: C:/Users/berat/Documents/pyDatabase/PDFs')
-    urllib.request.urlretrieve(url, f"C:/Users/berat/Documents/pyDatabase/PDFs/{pdf}.pdf")
+    print('Downloading PDF to: C:/Users/berat/Ulakfin/Database/PDFs')
+    urllib.request.urlretrieve(url, f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf")
     print('PDF is downloaded')
 
     # PDF MINER FUNCTION
@@ -56,7 +57,7 @@ def gedik_yatirim(n=4):
         return text
 
     # Getting the data between 'KAP Haberleri' and 'Veri Takvimi'
-    pdf_file = f"C:/Users/berat/Documents/pyDatabase/PDFs/{pdf}.pdf"
+    pdf_file = f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf"
     sirket_haberleri_pattern = '(?<=KAP Haberleri).*?(?=Veri Takvimi)'
     text_list = []
     sirket_haber_list_1 = []
@@ -68,7 +69,7 @@ def gedik_yatirim(n=4):
     text_splitted = []
 
     # Deleting empty elements in our text's row list.
-    
+
     for row in text_splitted1:
         if row != '' and row != ' ' and row != '  ' and row != '   ':
             text_splitted.append(row)
@@ -220,4 +221,4 @@ gedik = gedik_yatirim()
 
 print(gedik)
 
-gedik.to_excel("gedik_data.xlsx")
+gedik.to_excel(r"C:/Users/berat/Ulakfin/Database/DATAs/gedik_data.xlsx")
