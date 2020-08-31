@@ -37,89 +37,89 @@ def pdf_to_text(path):
 
 
 # ------BMD YATIRIM--------------------------#
-link = "https://www.bmd.com.tr/"
+def bmd_yatirim(n = 2):
+    link = "https://www.bmd.com.tr/"
+    driver.get(link)
+    href1 = driver.find_elements_by_xpath('//div/a')[n]
+    url = href1.get_attribute("href")
+    driver.get(url)
+    href2 = driver.find_elements_by_xpath("//div/a[@target='_blank']")[2]
+    url2 = href2.get_attribute("href")
+    pdf = "bmd_yatırım_" + url2.split('pdf')[0][-11:-1]
+    print('Downloading PDF')
+    urllib.request.urlretrieve(url2, f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf")
+    print('PDF is downloaded')
+    pdf_file = f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf"
 
-driver.get(link)
-href1 = driver.find_elements_by_xpath('//div/a')[3]
-url = href1.get_attribute("href")
-driver.get(url)
-href2 = driver.find_elements_by_xpath("//div/a[@target='_blank']")[2]
-url2 = href2.get_attribute("href")
-pdf = "bmd_yatırım_" + url2.split('pdf')[0][-11:-1]
-print('Downloading PDF')
-urllib.request.urlretrieve(url2, f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf")
-print('PDF is downloaded')
-pdf_file = f"C:/Users/berat/Ulakfin/Database/PDFs/{pdf}.pdf"
+    tarih = url2.split('pdf')[0][-11:-1]
+    tarih = tarih.replace('_', '.')
 
-tarih = url2.split('pdf')[0][-11:-1]
-tarih = tarih.replace('_', '.')
+    #
+    if 'ŞİRKET HABERLERİ' in pdf_to_text(pdf_file):
+        sirket_haberleri_pattern = '(?<=Şirket Haberleri).*?(?=BİST VERİLERİ)'
+        text_list = [pdf_to_text(pdf_file)]
+        text_list[0] = text_list[0].split('HACİM')[0]
+        text_list[0] = text_list[0].split('ŞİRKET HABERLERİ')[1]
 
-#
-if 'ŞİRKET HABERLERİ' in pdf_to_text(pdf_file):
-    sirket_haberleri_pattern = '(?<=Şirket Haberleri).*?(?=BİST VERİLERİ)'
-    text_list = [pdf_to_text(pdf_file)]
-    text_list[0] = text_list[0].split('HACİM')[0]
-    text_list[0] = text_list[0].split('ŞİRKET HABERLERİ')[1]
+        print('Splitting the text between HACİM and ŞİRKET HABERLERİ')
 
-    print('Splitting the text between HACİM and ŞİRKET HABERLERİ')
+        text_splitted = text_list[0].split('\n')
+        text_splitted = [i for i in text_splitted if i]
 
-    text_splitted = text_list[0].split('\n')
-    text_splitted = [i for i in text_splitted if i]
+        text_splitted2 = []
+        for row in text_splitted:
+            if row != ' ':
+                text_splitted2.append(row)
 
-    text_splitted2 = []
-    for row in text_splitted:
-        if row != ' ':
-            text_splitted2.append(row)
+        news_list1 = []
+        for row in text_splitted2:
+            if 'Haberin etkisi:' in row:
+                news_list1.append(row.split('Haberin etkisi:')[0][-7:-2].strip())
+            else:
+                news_list1[-1] = news_list1[-1] + row
 
-    news_list1 = []
-    for row in text_splitted2:
-        if 'Haberin etkisi:' in row:
-            news_list1.append(row.split('Haberin etkisi:')[0][-7:-2].strip())
-        else:
-            news_list1[-1] = news_list1[-1] + row
+        codes = []
+        for row in news_list1:
+            codes.append(row[0:5])
 
-    codes = []
-    araci_kurum = []
-    date_list = []
-    for row in news_list1:
-        araci_kurum.append('BMD Yatırım')
-        codes.append(row[0:5])
-        date_list.append(datetime.datetime.now().date())
+        news_id = []
+        time = []
+        date_list = []
+        news = []
+        araci_kurum = []
+        news_index = 0
+        k = 0
+        codes1 = []
+        for i in range(0, len(codes)):
+            if '(' in codes[i]:
+                date_list.append(datetime.datetime.now().date())
+                news.append(news_list1[i][5:])
+                codes1.append(codes[i][1:])
+                time.append(datetime.datetime.today().now().time())
+                news_id.append(k)
+                araci_kurum.append('BMD Yatırım')
+                k = k + 1
+                print(f'Written news index: {news_index}')
+                news_index = news_index + 1
+            else:
+                date_list.append(datetime.datetime.now().date())
+                news.append(news_list1[i][5:])
+                codes1.append(codes[i])
+                time.append(datetime.datetime.today().now().time())
+                news_id.append(k)
+                k = k + 1
+                print(f'Written news index: {news_index}')
+                news_index = news_index + 1
 
-    news_id = []
-    time = []
-    news_index = 0
-    k = 0
-    codes1 = []
-    for code in codes:
-        if '(' in code:
-            codes1.append(code[1:])
-            time.append(datetime.datetime.today().now().time())
-            news_id.append(k)
-            k = k + 1
-            print(f'Written news index: {news_index}')
-            news_index = news_index + 1
-        else:
-            codes1.append(code)
-            time.append(datetime.datetime.today().now().time())
-            news_id.append(k)
-            k = k + 1
-            print(f'Written news index: {news_index}')
-            news_index = news_index + 1
+        if len(codes) == news_index:
+            print('All data is succesfully written')
 
-    if len(codes) == news_index:
-        print('All data is succesfully written')
+        codes = codes1
 
-    codes = codes1
+        data = pd.DataFrame(list(zip(news_id, date_list, codes, news, araci_kurum, time)))
+        data.columns = ['news_id', 'date', 'symbol', 'news', 'broker_name', 'timestamp']
+        return data
+    else:
+        print('XD')
 
-    news = []
-    for row in news_list1:
-        news.append(row[5:])
-
-    data = pd.DataFrame(list(zip(news_id, date_list, codes, news, araci_kurum, time)))
-    data.columns = ['news_id', 'date', 'symbol', 'news', 'broker_name', 'timestamp']
-
-print(data)
-
-data.to_excel(r"C:/Users/berat/Ulakfin/Database/DATAs/bmd_data.xlsx")
-
+data = bmd_yatirim()
