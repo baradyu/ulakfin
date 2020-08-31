@@ -20,6 +20,7 @@ options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+
 print('Webdriver is arrenged.')
 
 print('Getting the url')
@@ -32,8 +33,7 @@ print('We are on the website.')
 
 
 def gedik_yatirim(n=4):
-    href = driver.find_elements_by_xpath('//div/a')[
-        n]  # -----------------------------------------------------------------
+    href = driver.find_elements_by_xpath('//div/a')[n]  # -----------------------------------------------------------------
     url = href.get_attribute("href")
     pdf = 'gedik_yatırım_' + url.split('pdf')[0][-11:-1]
     print('Downloading PDF to: C:/Users/berat/Ulakfin/Database/PDFs')
@@ -218,7 +218,3 @@ def gedik_yatirim(n=4):
 
 
 gedik = gedik_yatirim()
-
-print(gedik)
-
-gedik.to_excel(r"C:/Users/berat/Ulakfin/Database/DATAs/gedik_data.xlsx")
