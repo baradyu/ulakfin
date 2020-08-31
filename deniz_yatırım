@@ -102,7 +102,7 @@ def deniz_yatirim(n=5):
     for row in news_list2:
         if ',' in row.split(':', 1)[0]:
             for code in row.split(':', 1)[0].split(','):
-                codes.append(code)
+                codes.append(code.strip())
                 news.append(row.split(':', 1)[1].strip())
                 tarih.append((datetime.datetime.now().date()))
                 araci_kurum.append('Deniz Yatırım')
@@ -113,7 +113,7 @@ def deniz_yatirim(n=5):
                 news_index = news_index + 1
         elif '-' in row.split(':', 1)[0]:
             for code in row.split(':', 1)[0].split('-'):
-                codes.append(code)
+                codes.append(code.strip())
                 news.append(row.split(':', 1)[1].strip())
                 tarih.append((datetime.datetime.now().date()))
                 araci_kurum.append('Deniz Yatırım')
@@ -123,7 +123,7 @@ def deniz_yatirim(n=5):
                 print(f'Written news index: {news_index}')
                 news_index = news_index + 1
         else:
-            codes.append(row.split(':', 1)[0])
+            codes.append(row.split(':', 1)[0].strip())
             news.append(row.split(':', 1)[1].strip())
             tarih.append((datetime.datetime.now().date()))
             araci_kurum.append('Deniz Yatırım')
@@ -148,7 +148,3 @@ def deniz_yatirim(n=5):
 
 
 deniz = deniz_yatirim()
-
-print(deniz)
-
-deniz.to_excel(r"C:/Users/berat/Ulakfin/Database/DATAs/deniz_data.xlsx")
